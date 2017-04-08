@@ -1,0 +1,79 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--<item-->
+    <!--android:id="@+id/action_settings"-->
+    <!--android:orderInCategory="100"-->
+    <!--android:title="@string/action_settings"-->
+    <!--app:showAsAction="never" />-->
+
+    <item
+        android:id="@+id/action_create"
+        android:showAsAction="never"
+        android:title="@string/createChatRoom" />
+    <item
+        android:id="@+id/action_join"
+        android:showAsAction="never"
+        android:title="@string/joinInChatRoom" />
+    <item
+        android:id="@+id/connect_account"
+        android:showAsAction="never"
+        android:title="@string/callAccount"
+        />
+    <item
+        android:id="@+id/connect_band"
+        android:showAsAction="never"
+        android:title="@string/callAccountBin"
+        />
+
+    <item
+        android:id="@+id/connect_status"
+        android:showAsAction="never"
+        android:title="@string/checkAccountStatus"
+        />
+    <item
+        android:id="@+id/account_logout"
+        android:showAsAction="never"
+        android:title="@string/accountLogout"
+        />
+
+    <item
+        android:id="@+id/action_connect"
+        android:showAsAction="never"
+        android:title="@string/connection" />
+
+    <item
+        android:id="@+id/action_disconnect"
+        android:showAsAction="never"
+        android:title="@string/disconnection" />
+
+    <item
+        android:id="@+id/action_setting"
+        android:showAsAction="never"
+        android:title="@string/setting" />
+
+    <item
+        android:id="@+id/action_offline_list"
+        android:showAsAction="never"
+        android:title="@string/offline_list" />
+
+    <item
+        android:id="@+id/action_offline"
+        android:showAsAction="never"
+        android:title="@string/offline" />
+
+    <item
+        android:id="@+id/action_upgrade"
+        android:showAsAction="never"
+        android:title="@string/upgrade" />
+
+    <item
+        android:id="@+id/action_pen_status"
+        android:showAsAction="never"
+        android:title="@string/pen_status" />
+
+    <item
+        android:id="@+id/action_save_bitmap"
+        android:showAsAction="never"
+        android:title="@string/saveBitmap"/>
+
+</menu>

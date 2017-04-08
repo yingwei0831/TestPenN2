@@ -1,0 +1,41 @@
+<resources>
+    <string name="app_name">TestPenN2</string>
+    <string name="welcome">Hello World!</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="createChatRoom">注册</string>
+    <string name="joinInChatRoom">登录</string>
+    <string name="callAccount">呼叫用户</string>
+    <string name="callAccountBin">发起白板会话</string>
+    <string name="checkAccountStatus">检验在线状态</string>
+    <string name="accountLogout">注销</string>
+    <string name="saveBitmap">保存图片到本地</string>
+
+    <string name="connection">连接</string>
+    <string name="disconnection">断开</string>
+    <string name="setting">Setting</string>
+
+    <string name="clearView">清空视图</string>
+    <string name="upgrade">升级 Pen</string>
+    <string name="viewDot">ViewDot</string>
+    <string name="offline">Show OfflineData</string>
+    <string name="offline_list">OfflineData list</string>
+    <string name="pen_status">笔的状态</string>
+    <string name="pen_setup_auto_power">自动电源 开/关</string>
+    <string name="pen_setup_beep">峰鸣 开/关</string>
+    <string name="pen_setup_password">设置口令</string>
+    <string name="pen_color_1">颜色1</string>
+    <string name="pen_color_2">颜色2</string>
+
+    <!--  DeviceListActivity -->
+    <string name="scanning">正在扫描设备</string>
+    <string name="select_device">选择一个设备连接</string>
+    <string name="none_paired">没有配对的设备</string>
+    <string name="none_found">未发现设备</string>
+    <string name="title_paired_devices">配对的设备</string>
+    <string name="title_other_devices">其它可用设备</string>
+    <string name="button_scan">扫描设备</string>
+    <string name="title_activity_login">LoginActivity</string>
+    <string name="title_activity_base">BaseActivity</string>
+
+</resources>

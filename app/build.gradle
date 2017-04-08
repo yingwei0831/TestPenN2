@@ -1,0 +1,58 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion "25.0.2"
+
+    defaultConfig {
+        applicationId "com.yingwei.testing.testpenn2"
+        minSdkVersion 18
+        targetSdkVersion 25
+        versionCode 1
+        versionName "1.0"
+
+        ndk {
+            //设置支持的SO库架构
+            abiFilters "armeabi-v7a", "x86","arm64-v8a","x86_64"
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    sourceSets{
+        main{
+            jniLibs.srcDirs=['libs']
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    testCompile 'junit:junit:4.12'
+    compile 'com.android.support:appcompat-v7:25.3.0'
+    compile 'com.android.support:design:25.3.0'
+    // 添加依赖。注意，版本号必须一致。
+    // 基础功能 (必需)
+        compile 'com.netease.nimlib:basesdk:3.5.5'
+    // 音视频需要
+        compile 'com.netease.nimlib:avchat:3.5.5'
+    // 聊天室需要
+        compile 'com.netease.nimlib:chatroom:3.5.5'
+    // 实时会话服务需要
+        compile 'com.netease.nimlib:rts:3.5.5'
+    // 全文检索服务需要
+    //    compile 'com.netease.nimlib:lucene:3.5.0'
+//    蓝牙笔
+    compile files('libs/nasdk.jar')
+//    compile files('libs/cosinesdk.jar')
+//    compile files('libs/nim-avchat-3.5.0.jar')
+//    compile files('libs/nim-basesdk-3.5.0.jar')
+//    compile files('libs/nim-chatroom-3.5.0.jar')
+//    compile files('libs/nim-lucene-3.5.0.jar')
+//    compile files('libs/nim-rts-3.5.0.jar')
+//    compile files('libs/nrtc-sdk.jar')
+}
