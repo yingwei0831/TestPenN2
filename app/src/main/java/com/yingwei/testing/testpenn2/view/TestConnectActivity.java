@@ -14,6 +14,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.NotificationCompat;
@@ -40,6 +41,8 @@ import com.netease.nimlib.sdk.avchat.model.AVChatData;
 import com.netease.nimlib.sdk.avchat.model.AVChatNotifyOption;
 import com.netease.nimlib.sdk.avchat.model.AVChatOptionalConfig;
 import com.netease.nimlib.sdk.avchat.model.AVChatVideoFrame;
+import com.netease.nimlib.sdk.media.player.AudioPlayer;
+import com.netease.nimlib.sdk.media.player.OnPlayListener;
 import com.netease.nimlib.sdk.rts.RTSCallback;
 import com.netease.nimlib.sdk.rts.RTSChannelStateObserver;
 import com.netease.nimlib.sdk.rts.RTSManager;
@@ -116,11 +119,16 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
     protected NotificationCompat.Builder mBuilder;
     protected NotificationManager mNotifyManager;
 
-//    public InputPasswordDialog inputPassDialog;
+    //    public InputPasswordDialog inputPassDialog;
     private AVChatData mChatData; //来音频通话请求，携带的数据
 
     private DoodleView doodleView;
     private Bitmap mDoodleViewBmp; //surfaceview保存的bitmap
+
+    private String filePath;
+    private String fileName;
+//    private long pausedPosition;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -181,6 +189,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         registerRTSIncomingCallObserver(false);
         AVChatManager.getInstance().observeHangUpNotification(callHangupObserver, false);
         registerAVChatStateObserver(false);
+        registerReceiverData(false);
     }
 
     private void registerAVChatIncomingCallObserver(final boolean register) {
@@ -190,7 +199,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
                 //监听其它端的回应
 //                observeOnlineAckNotification(true);
                 Toast.makeText(getApplicationContext(), "监听到来电", Toast.LENGTH_SHORT).show();
-                Log.e(TAG, "监听到来电：onEvent: " + chatData.getAccount() +", " + chatData.getChatId() +", " + chatData.getExtra() +", " + chatData.getChatType() +", " + chatData.getTimeTag() +", " + chatData.getPushSound());
+                Log.e(TAG, "onEvent 监听到来电：" + chatData.getAccount() + ", " + chatData.getChatId() + ", " + chatData.getExtra() + ", " + chatData.getChatType() + ", " + chatData.getTimeTag() + ", " + chatData.getPushSound());
                 mChatData = chatData;
                 dealIncomingCall();
             }
@@ -204,9 +213,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
             interruptCall();
             return;
         }
-        Bundle bundle = new Bundle();
-        bundle.putSerializable("data", mChatData);
-        CallActivity.startActivity(getApplicationContext(), bundle);
+        goToCallView(mChatData);
 //        showDialog(2, "来电提醒", "是否接收新的来电", "确定", "拒接");
     }
 
@@ -237,9 +244,9 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
             public void onSuccess(Void aVoid) {
                 showToast("对方同意接听成功");
                 Log.e(TAG, "对方同意接听成功");
-                Bundle bundle = new Bundle();
-                bundle.putSerializable("data", mChatData);
-                CallActivity.startActivity(DemoCache.getContext(), bundle); //进入音频通话页面
+//                Bundle bundle = new Bundle();
+//                bundle.putSerializable("data", mChatData);
+//                CallActivity.startActivityForResult(TestConnectActivity.this, bundle); //进入音频通话页面
             }
 
             @Override
@@ -288,6 +295,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
             showToast("对方结束通话");
         }
     };
+
     public void connect() {
         startActivityForResult(new Intent(getApplicationContext(), DeviceListActivity.class), 2);
     }
@@ -295,6 +303,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        Log.e(TAG, "------------onActivityResult------------");
         if (requestCode == 2) {
             if (resultCode == Activity.RESULT_OK) {
                 String address = null;
@@ -303,10 +312,15 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
                     iPenCtrl.connect(address);
                 }
             }
-        }else if (requestCode == 880){ //TODO 注册
+        } else if (requestCode == 880) { //TODO 注册
 
-        }else if (requestCode == 881){ //TODO 登录
+        } else if (requestCode == 881) { //TODO 登录
             account = AuthPreferences.getUserAccount();
+        } else if (requestCode == 11) { //录制了音视频
+            if (data != null) {
+                filePath = data.getStringExtra("filePath");
+                fileName = data.getStringExtra("fileName");
+            }
         }
     }
 
@@ -399,6 +413,9 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case R.id.play_record:
+                playRecord();
+                break;
             case R.id.action_create: //注册
                 register(880);
                 break;
@@ -440,6 +457,59 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+     * 播放录音
+     */
+    private void playRecord() {
+        startActivity(new Intent( getApplicationContext(), CallActivity.class));
+//        Log.e(TAG, "fileName = " + fileName + ", filePath = " + filePath);
+//        // 定义一个播放进程回调类
+//        OnPlayListener listener = new OnPlayListener() {
+//
+//            // 音频转码解码完成，会马上开始播放了
+//            public void onPrepared() {
+//                Log.e(TAG, "onPrepared: ");
+//            }
+//
+//            // 播放结束
+//            public void onCompletion() {
+//                Log.e(TAG, "onCompletion: " );
+//            }
+//
+//            // 播放被中断了
+//            public void onInterrupt() {
+//                Log.e(TAG, "onInterrupt: ");
+//            }
+//
+//            // 播放过程中出错。参数为出错原因描述
+//            public void onError(String error) {
+//                Log.e(TAG, "onError: " + error);
+//            }
+//
+//            // 播放进度报告，每隔 500ms 会回调一次，告诉当前进度。 参数为当前进度，单位为毫秒，可用于更新 UI
+//            public void onPlaying(long curPosition) {
+//                Log.e(TAG, "onPlaying: " + curPosition);
+//            }
+//        };
+//
+//        // 构造播放器对象
+//        AudioPlayer player = new AudioPlayer(getApplicationContext(), filePath, listener);
+//        player.setDataSource(fileName);
+//
+//        // 开始播放。需要传入一个 Stream Type 参数，表示是用听筒播放还是扬声器。取值可参见
+//        // android.media.AudioManager#STREAM_***
+//        // AudioManager.STREAM_VOICE_CALL 表示使用听筒模式
+//        // AudioManager.STREAM_MUSIC 表示使用扬声器模式
+//        player.start(AudioManager.STREAM_VOICE_CALL); //streamType
+//
+//        // 如果中途切换播放设备，重新调用 start，传入指定的 streamType 即可。player 会自动停止播放，然后再以新的 streamType 重新开始播放。
+//        // 如果需要从中断的地方继续播放，需要外面自己记住已经播放过的位置，然后在 onPrepared 回调中调用 seekTo
+////        player.seekTo(pausedPosition);
+//
+//        // 主动停止播放
+////        player.stop();
+    }
+
     private void callAccountBin() { //发起白板会话通道
         if (account == null) {
             showToast("请登录");
@@ -455,11 +525,11 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         RTSNotifyOption notifyOption = new RTSNotifyOption();
 
         registerTimeOut(true); //监听（发起）创建新通道或接受新通道超时通知
-        sessionId = RTSManager.getInstance().start(account.equals("13260398606")?"13260398607":"13260398606", types, options, notifyOption, new RTSCallback<RTSData>() {
+        sessionId = RTSManager.getInstance().start(account.equals("13260398606") ? "13260398607" : "13260398606", types, options, notifyOption, new RTSCallback<RTSData>() {
             @Override
             public void onSuccess(RTSData rtsData) {
-                showToast("发起通话通道成功：" + rtsData.getAccount() +", " + rtsData.getChannelId() +", " +rtsData.getExtra() +", " + rtsData.getLocalSessionId());
-                Log.e(TAG, "发起通话通道成功："+rtsData.getAccount() +", " + rtsData.getChannelId() +", " +rtsData.getExtra() +", " + rtsData.getLocalSessionId());
+                showToast("发起通话通道成功：" + rtsData.getAccount() + ", " + rtsData.getChannelId() + ", " + rtsData.getExtra() + ", " + rtsData.getLocalSessionId());
+                Log.e(TAG, "发起通话通道成功：" + rtsData.getAccount() + ", " + rtsData.getChannelId() + ", " + rtsData.getExtra() + ", " + rtsData.getLocalSessionId());
 
                 observerAccountReturn(true); //监听被叫方回应
                 channelId = rtsData.getChannelId();
@@ -467,14 +537,14 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
 
             @Override
             public void onFailed(int i) {
-                showToast("发起通话通道失败: ErrorCode = "+i);
-                Log.e(TAG, "发起通话通道失败: ErrorCode = "+i);
+                showToast("发起通话通道失败: ErrorCode = " + i);
+                Log.e(TAG, "发起通话通道失败: ErrorCode = " + i);
             }
 
             @Override
             public void onException(Throwable throwable) {
                 showToast("发起通话通道异常");
-                Log.e(TAG, "发起通话通道异常："+throwable.getMessage());
+                Log.e(TAG, "发起通话通道异常：" + throwable.getMessage());
             }
         });
 
@@ -499,7 +569,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
     }
 
     private void registerTimeOut(boolean register) {
-        RTSManager.getInstance().observeTimeoutNotification("监听超时",timeoutObserver, register);
+        RTSManager.getInstance().observeTimeoutNotification("监听超时", timeoutObserver, register);
     }
 
     private Observer<RTSCalleeAckEvent> calleeAckEventObserver = new Observer<RTSCalleeAckEvent>() {
@@ -512,7 +582,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
                 }
                 showToast("通道请求被接受");
                 channelId = rtsCalleeAckEvent.getChannelId();
-                Log.e(TAG, "通道请求被接受: " + rtsCalleeAckEvent.getAccount()+", "+ channelId +", " + rtsCalleeAckEvent.getLocalSessionId());
+                Log.e(TAG, "通道请求被接受: " + rtsCalleeAckEvent.getAccount() + ", " + channelId + ", " + rtsCalleeAckEvent.getLocalSessionId());
                 RTSManager.getInstance().observeControlNotification(sessionId, controlObserver, true); //双方会话建立之后，需要监听会话控制通知。
                 registerReceiverData(true); //发起会话（对方接受后），或者接受了会话请求后，需要立即注册对数据通道状态的监听。
 
@@ -555,8 +625,9 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         });
     }
 
-//    boolean accept;
+    //    boolean accept;
     long channelId;
+
     //监听会话请求/数据通道请求（被叫方）
     private void registerRTSIncomingCallObserver(boolean register) {
         RTSManager.getInstance().observeIncomingSession(new Observer<RTSData>() {
@@ -564,25 +635,25 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
             public void onEvent(RTSData rtsData) {
                 // 启动会话界面
                 channelId = rtsData.getChannelId();
-                showToast("收到数据通道请求，选择拒绝或接受 " + rtsData.getAccount() +", " + channelId +", " +rtsData.getExtra() +", " + rtsData.getLocalSessionId() );
-                Log.e(TAG, "收到数据通道请求,选择拒绝或接受:" + rtsData.getAccount() +", " + channelId +", " +rtsData.getExtra() +", " + rtsData.getLocalSessionId() );
+                showToast("收到数据通道请求，选择拒绝或接受 " + rtsData.getAccount() + ", " + channelId + ", " + rtsData.getExtra() + ", " + rtsData.getLocalSessionId());
+                Log.e(TAG, "收到数据通道请求,选择拒绝或接受:" + rtsData.getAccount() + ", " + channelId + ", " + rtsData.getExtra() + ", " + rtsData.getLocalSessionId());
                 //查看当前手机状态，如果忙，则拒接，如果闲，则弹出选择是否接收页面
                 int state = PhoneCallStateObserver.getInstance().getPhoneCallState();
-                if (0 == state){
+                if (0 == state) {
                     sessionId = rtsData.getLocalSessionId();
                     toAccount = rtsData.getAccount();
                     showToast("已接受通信请求");
 //                    accept = false;
                     Log.e(TAG, "已接受通信请求");
                     acceptTunData(toAccount, channelId);
-                }else {
+                } else {
                     showToast("已拒绝通信请求");
                     Log.e(TAG, "已拒绝通信请求");
 //                    accept = true;
                     denyTunData();
                 }
             }
-        },register);
+        }, register);
     }
 
     //拒绝白板通道请求（被叫方）
@@ -629,8 +700,11 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         });
     }
 
-    private void registerReceiverData(boolean b) {
-        RTSManager.getInstance().observeChannelState(sessionId, channelStateObserver, b);
+    /**
+     * 监听数据通道的状态
+     */
+    private void registerReceiverData(boolean register) {
+        RTSManager.getInstance().observeChannelState(sessionId, channelStateObserver, register);
     }
 
     RTSChannelStateObserver channelStateObserver = new RTSChannelStateObserver() {
@@ -639,7 +713,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         public void onConnectResult(String localSessionId, RTSTunnelType tunType, long channelId, int code, String recordFile) {
             // 与服务器连接结果通知，成功返回 200, 同时返回服务器录制文件的地址
             showToast("与服务器连接结果通知: " + code);
-            Log.e(TAG, "localSessionId = " + localSessionId + ", channelId = " +channelId + ", code = " +code+", recordFile = " + recordFile);
+            Log.e(TAG, "localSessionId = " + localSessionId + ", channelId = " + channelId + ", code = " + code + ", recordFile = " + recordFile);
         }
 
         @Override
@@ -689,9 +763,11 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         }
     };
 
-    private void showToast(String msg){
+    private void showToast(String msg) {
         Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
     }
+    String user0 = "13260398606";
+    String user1 = "13260398607";
 
     private void callAccount() { //请求语音通话
         if (account == null) {
@@ -711,30 +787,34 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         configs.enableServerRecordAudio(true);  //是否打开服务器录制音频,服务器录制需要开通相关业务。
         AVChatNotifyOption notifyOption = new AVChatNotifyOption();
 
-        AVChatManager.getInstance().call(account.equals("13260398606")?"13260398607":"13260398606",
+        AVChatManager.getInstance().call(account.equals(user0) ? user1 : user0,
                 AVChatType.AUDIO, configs, notifyOption, new AVChatCallback<AVChatData>() {
-            @Override
-            public void onSuccess(AVChatData avChatData) {
-                showToast("发起呼叫成功");
-                Log.e(TAG, "onSuccess: " + avChatData.getAccount() +", " + avChatData.getChatId() +", " + avChatData.getTimeTag() + ", " +
-                        avChatData.getPushSound() + ", " + avChatData.getExtra() +", " + avChatData.getChatType());
-                Bundle bundle = new Bundle();
-                bundle.putSerializable("data", avChatData);
-                CallActivity.startActivity(getApplicationContext(), bundle);
-            }
+                    @Override
+                    public void onSuccess(AVChatData avChatData) {
+                        showToast("发起呼叫成功");
+                        Log.e(TAG, "onSuccess: " + avChatData.getAccount() + ", " + avChatData.getChatId() + ", " + avChatData.getTimeTag() + ", " +
+                                avChatData.getPushSound() + ", " + avChatData.getExtra() + ", " + avChatData.getChatType());
+                        goToCallView(avChatData);
+                    }
 
-            @Override
-            public void onFailed(int i) { //403:应用被封禁
-                showToast("发起呼叫失败");
-                Log.e(TAG, "onFailed: ERROR CODE = " + i);
-            }
+                    @Override
+                    public void onFailed(int i) { //403:应用被封禁
+                        showToast("发起呼叫失败");
+                        Log.e(TAG, "onFailed: ERROR CODE = " + i);
+                    }
 
-            @Override
-            public void onException(Throwable throwable) {
-                showToast("发起呼叫异常");
-                Log.e(TAG, "onException: " + throwable.getMessage());
-            }
-        });
+                    @Override
+                    public void onException(Throwable throwable) {
+                        showToast("发起呼叫异常");
+                        Log.e(TAG, "onException: " + throwable.getMessage());
+                    }
+                });
+    }
+
+    private void goToCallView(AVChatData avChatData) {
+        Intent intents = new Intent(getApplicationContext(), CallActivity.class);
+        intents.putExtra("data", avChatData);
+        startActivityForResult(intents, 11);
     }
 
     private void register(int type) {
@@ -1028,12 +1108,13 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        Log.e(TAG, "onNewIntent");
     }
 
     private void checkAccountStatus() {
         StatusCode status = NIMClient.getStatus();
         String msg = "";
-        switch (status){
+        switch (status) {
             case INVALID:
                 msg = "未定义";
                 break;
@@ -1077,8 +1158,8 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (toAccount != null){
-            if (keyCode == KeyEvent.KEYCODE_BACK){
+        if (toAccount != null) {
+            if (keyCode == KeyEvent.KEYCODE_BACK) {
                 showDialog(1, "提示", "是否结束", "是", "否");
             }
         }
@@ -1117,7 +1198,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
     }
 
     private void actionCancel(int type) {
-        switch (type){
+        switch (type) {
             case 2:
                 interruptCall();
                 break;
@@ -1125,7 +1206,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
     }
 
     private void action(int type) {
-        switch (type){
+        switch (type) {
             case 1: //关闭白板通话
                 close();
                 break;
@@ -1167,7 +1248,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
                 //TODO toolBar的高度
                 int toolBarHeight = 0;
 //                if (getSupportActionBar() != null) {
-                    toolBarHeight = getSupportActionBar().getHeight();
+                toolBarHeight = getSupportActionBar().getHeight();
 //                }
                 Log.e("Doodle", "toolBarHeight = " + toolBarHeight);
                 float offsetX = marginLeft;
@@ -1190,7 +1271,8 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
 
     AVChatStateObserver avChatStateObserver = new AVChatStateObserver() {
         @Override
-        public void onTakeSnapshotResult(String s, boolean b, String s1) {
+        public void onTakeSnapshotResult(String account, boolean success, String file) {
+            //用户执行截图后会回调
 
         }
 
@@ -1267,6 +1349,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         @Override
         public void onDeviceEvent(int i, String s) {
 
+
         }
 
         @Override
@@ -1317,6 +1400,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
 
     /**
      * 翻页 FlipListener
+     *
      * @param transaction
      */
     @Override

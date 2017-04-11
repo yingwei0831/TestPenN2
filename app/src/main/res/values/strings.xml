@@ -10,6 +10,9 @@
     <string name="checkAccountStatus">检验在线状态</string>
     <string name="accountLogout">注销</string>
     <string name="saveBitmap">保存图片到本地</string>
+    <string name="playRecord">播放</string>
+    <string name="audioRecord">录制</string>
+    <string name="remoteRecord">播放远程记录</string>
 
     <string name="connection">连接</string>
     <string name="disconnection">断开</string>

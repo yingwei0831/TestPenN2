@@ -29,4 +29,24 @@
         android:src="@mipmap/receive"
         android:onClick="receive"/>
 
+    <Button
+        android:id="@+id/btn_record"
+        android:onClick="record"
+        android:text="@string/audioRecord"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+    <Button
+        android:layout_below="@id/btn_record"
+        android:onClick="play"
+        android:text="@string/playRecord"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:onClick="remoteRecord"
+        android:text="@string/remoteRecord"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"/>
+
 </RelativeLayout>

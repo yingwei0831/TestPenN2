@@ -2,6 +2,7 @@ package com.yingwei.testing.testpenn2.view;
 
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -23,9 +24,21 @@ import com.netease.nimlib.sdk.avchat.model.AVChatData;
 import com.netease.nimlib.sdk.avchat.model.AVChatOnlineAckEvent;
 import com.netease.nimlib.sdk.avchat.model.AVChatOptionalConfig;
 import com.netease.nimlib.sdk.avchat.model.AVChatVideoFrame;
+import com.netease.nimlib.sdk.media.player.AudioPlayer;
+import com.netease.nimlib.sdk.media.player.OnPlayListener;
+import com.netease.nimlib.sdk.media.record.AudioRecorder;
+import com.netease.nimlib.sdk.media.record.IAudioRecordCallback;
+import com.netease.nimlib.sdk.media.record.RecordType;
 import com.yingwei.testing.testpenn2.R;
+import com.yingwei.testing.testpenn2.retrofitutil.RetrofitWrapper;
+import com.yingwei.testing.testpenn2.retrofitutil.intf.IApiService;
 
+import java.io.File;
 import java.util.Map;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class CallActivity extends AppCompatActivity {
 
@@ -36,6 +49,9 @@ public class CallActivity extends AppCompatActivity {
     private AVChatData mChatData; //来音频通话请求，携带的数据
 
     boolean connected;
+
+    String filepath;
+    String filename;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,15 +82,15 @@ public class CallActivity extends AppCompatActivity {
     }
 
 
-    public void deny(View view){ //拒接
-        if (connected){ //挂断
+    public void deny(View view) { //拒接
+        if (connected) { //挂断
             close();
         } else { //拒接
             AVChatManager.getInstance().hangUp(avChatCallbackDeny);
         }
     }
 
-    public void receive(View view){ //接听
+    public void receive(View view) { //接听
         AVChatOptionalConfig config = new AVChatOptionalConfig();
         config.enableServerRecordAudio(true); //开启服务器音频录制
         AVChatManager.getInstance().accept(config, avChatCallback);
@@ -121,7 +137,7 @@ public class CallActivity extends AppCompatActivity {
         public void onEvent(AVChatTimeOutEvent event) {
             // 超时类型
             String timeout = "";
-            switch (event){
+            switch (event) {
                 case INCOMING_TIMEOUT:
                     timeout = "来电超时";
                     break;
@@ -205,6 +221,10 @@ public class CallActivity extends AppCompatActivity {
         public void onEvent(AVChatCommonEvent hangUpInfo) {
             // 结束通话
             showToast("对方结束通话");
+            Intent data = new Intent();
+            data.putExtra("filePath", filepath);
+            data.putExtra("fileName", filename);
+            setResult(RESULT_OK, data);
             finish();
 //            close();
         }
@@ -220,6 +240,11 @@ public class CallActivity extends AppCompatActivity {
                 connected = false;
                 showToast("发起结束通话成功");
                 Log.e(TAG, "发起结束通话成功");
+                Intent data = new Intent();
+                data.putExtra("filePath", filepath);
+                data.putExtra("fileName", filename);
+                setResult(RESULT_OK, data);
+                finish();
             }
 
             @Override
@@ -268,7 +293,7 @@ public class CallActivity extends AppCompatActivity {
          */
         @Override
         public void onTakeSnapshotResult(String account, boolean success, String file) {
-
+            Log.e(TAG, "onTakeSnapshotResult");
         }
 
         /**
@@ -277,7 +302,7 @@ public class CallActivity extends AppCompatActivity {
          */
         @Override
         public void onConnectionTypeChanged(int netType) {
-
+            Log.e(TAG, "onConnectionTypeChanged");
         }
 
         /**
@@ -287,7 +312,7 @@ public class CallActivity extends AppCompatActivity {
          */
         @Override
         public void onAVRecordingCompletion(String account, String filePath) {
-
+            Log.e(TAG, "录制音视频结束：account = " + account + ", filePath = " + filePath);
         }
 
         /**
@@ -296,7 +321,7 @@ public class CallActivity extends AppCompatActivity {
          */
         @Override
         public void onAudioRecordingCompletion(String filePath) {
-
+            Log.e(TAG, "录制语音结束：filePath = " + filePath);
         }
 
         /**
@@ -307,7 +332,7 @@ public class CallActivity extends AppCompatActivity {
          */
         @Override
         public void onLowStorageSpaceWarning(long availableSize) {
-
+            Log.e(TAG, "onLowStorageSpaceWarning");
         }
 
         /**
@@ -316,7 +341,7 @@ public class CallActivity extends AppCompatActivity {
          */
         @Override
         public void onFirstVideoFrameAvailable(String account) {
-
+            Log.e(TAG, "onFirstVideoFrameAvailable");
         }
 
         /**
@@ -326,7 +351,7 @@ public class CallActivity extends AppCompatActivity {
          */
         @Override
         public void onVideoFpsReported(String account, int fps) {
-
+            Log.e(TAG, "onVideoFpsReported");
         }
 
         @Override
@@ -335,19 +360,23 @@ public class CallActivity extends AppCompatActivity {
             // 首先返回服务器连接是否成功的回调,并通过返回的 result code 做相应的处理
             // 参数 code 返回加入频道是否成功。
             // 常见错误码参考 JoinChannelCode 参数 filePath fileName 在开启服务器录制的情况下返回录制文件的保存路径。
-
+            Log.e(TAG, "音视频服务器连接回调：code = " + code + ", filePath = " + filePath + ", fileName = " + fileName);
+            //code = 200, filePath = 335393470-190949284218369.mp4, fileName = 335393470-190949284218369.aac
+            filepath = filePath;
+            filename = fileName;
         }
 
         @Override
         public void onLeaveChannel() {
             //自己成功离开频道回调
+            Log.e(TAG, "onLeaveChannel");
         }
 
         @Override
         public void onUserJoined(String account) {
             // 2.加入当前音视频频道用户帐号回调c
             // 其他用户音视频服务器连接成功后，会回调 ，可以获取当前通话的用户帐号
-
+            Log.e(TAG, "onUserJoined");
         }
 
         /**
@@ -357,6 +386,7 @@ public class CallActivity extends AppCompatActivity {
         public void onUserLeave(String account, int event) {
             // 3.当前用户离开频道回
             // 调通话过程中，若有用户离开，则会回调
+            Log.e(TAG, "onUserLeave");
         }
 
         /**
@@ -366,14 +396,14 @@ public class CallActivity extends AppCompatActivity {
         public void onProtocolIncompatible(int status) {
             // 版本协议不兼容回调
             // 若语音视频通话双方软件版本不兼容，则会回调
-
+            Log.e(TAG, "onProtocolIncompatible");
         }
 
         @Override
         public void onDisconnectServer() {
             //服务器断开回调
             // 通话过程中，服务器断开，会回调
-
+            Log.e(TAG, "onDisconnectServer");
         }
 
         /**
@@ -383,10 +413,12 @@ public class CallActivity extends AppCompatActivity {
         public void onNetworkQuality(String account, int value) {
             // 当前通话网络状况回调
             // 通话过程中网络状态发生变化,会回调
+            Log.e(TAG, "onNetworkQuality");
         }
 
         @Override
         public void onCallEstablished() {
+            Log.e(TAG, "onCallEstablished");
             //音视频连接成功建立回调
             //音视频连接建立，会回调 onCallEstablished。
             // 音频切换到正在通话的界面，并开始计时等处理。视频则通过为用户设置对应画布并添加到相应的 layout 上显示图像
@@ -401,7 +433,7 @@ public class CallActivity extends AppCompatActivity {
 
         @Override
         public void onDeviceEvent(int i, String s) {
-
+            Log.e(TAG, "onDeviceEvent");
         }
 
         /**
@@ -410,7 +442,7 @@ public class CallActivity extends AppCompatActivity {
          */
         @Override
         public void onFirstVideoFrameRendered(String user) {
-
+            Log.e(TAG, "onFirstVideoFrameRendered");
         }
 
         /**
@@ -422,7 +454,7 @@ public class CallActivity extends AppCompatActivity {
          */
         @Override
         public void onVideoFrameResolutionChanged(String user, int width, int height, int rotate) {
-
+            Log.e(TAG, "onVideoFrameResolutionChanged");
         }
 
         /**
@@ -434,6 +466,7 @@ public class CallActivity extends AppCompatActivity {
          */
         @Override
         public boolean onVideoFrameFilter(AVChatVideoFrame avChatVideoFrame) {
+            Log.e(TAG, "onVideoFrameFilter");
             return false;
         }
 
@@ -445,6 +478,7 @@ public class CallActivity extends AppCompatActivity {
          */
         @Override
         public boolean onAudioFrameFilter(AVChatAudioFrame avChatAudioFrame) {
+            Log.e(TAG, "onAudioFrameFilter");
             return false;
         }
 
@@ -454,7 +488,7 @@ public class CallActivity extends AppCompatActivity {
          */
         @Override
         public void onAudioDeviceChanged(int device) {
-
+            Log.e(TAG, "onAudioDeviceChanged");
         }
 
         /**
@@ -465,17 +499,17 @@ public class CallActivity extends AppCompatActivity {
          */
         @Override
         public void onReportSpeaker(Map<String, Integer> speakers, int mixedEnergy) {
-
+            Log.e(TAG, "onReportSpeaker");
         }
 
         @Override
         public void onStartLiveResult(int i) {
-
+            Log.e(TAG, "onStartLiveResult");
         }
 
         @Override
         public void onStopLiveResult(int i) {
-
+            Log.e(TAG, "onStopLiveResult");
         }
 
         /**
@@ -484,26 +518,177 @@ public class CallActivity extends AppCompatActivity {
          */
         @Override
         public void onAudioMixingEvent(int event) {
-
+            Log.e(TAG, "onAudioMixingEvent");
         }
     };
 
-    private void showToast(String msg){
+    private void showToast(String msg) {
         Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (connected){
+        if (connected) {
             close();
         }
         return super.onKeyDown(keyCode, event);
     }
 
-    public static void startActivity(Context context, Bundle bundle){
-        Intent intents = new Intent(context, CallActivity.class);
-        intents.putExtra("data", bundle.getSerializable("data"));
-        intents.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(intents);
+//    public static void startActivityForResult(AppCompatActivity context, Bundle bundle){
+//        Intent intents = new Intent(context, CallActivity.class);
+//        intents.putExtra("data", bundle.getSerializable("data"));
+////        intents.setFlags(Intent.flagactivity);
+//        context.startActivityForResult(intents, 11);
+//    }
+
+    boolean recording;
+    AudioRecorder recorder;
+    File audioFileRecord;
+
+    public void record(View view) {
+        if (recorder == null) {
+            // 初始化recorder
+            recorder = new AudioRecorder(
+                    getApplicationContext(),
+                    RecordType.AAC, // 录制音频类型（aac/amr)
+                    120, // 最长录音时长，到该长度后，会自动停止录音, 默认120s
+                    callback // 录音过程回调
+            );
+        }
+        if (recording) {
+            // 结束录音, 正常结束true，或者取消录音false
+//            recorder.completeRecord(true);
+            recorder.handleEndRecord(true, recorder.getCurrentRecordMaxAmplitude());
+            recording = false;
+        } else {
+            // 开始录音
+            recorder.startRecord();
+            if (!recorder.isRecording()) {
+                // 开启录音失败。
+                Log.e(TAG, "开启录音失败");
+            }
+            recording = true;
+        }
+    }
+
+    public void play(View view) {
+        // 定义一个播放进程回调类
+        OnPlayListener listener = new OnPlayListener() {
+
+            // 音频转码解码完成，会马上开始播放了
+            public void onPrepared() {}
+
+            // 播放结束
+            public void onCompletion() {}
+
+            // 播放被中断了
+            public void onInterrupt() {}
+
+            // 播放过程中出错。参数为出错原因描述
+            public void onError(String error){}
+
+            // 播放进度报告，每隔 500ms 会回调一次，告诉当前进度。 参数为当前进度，单位为毫秒，可用于更新 UI
+            public void onPlaying(long curPosition) {}
+        };
+
+//        // 构造播放器对象
+        AudioPlayer player = new AudioPlayer(getApplicationContext(), audioFileRecord.getAbsolutePath(), listener);
+
+//        // 开始播放。需要传入一个 Stream Type 参数，表示是用听筒播放还是扬声器。取值可参见
+//        // android.media.AudioManager#STREAM_***
+//        // AudioManager.STREAM_VOICE_CALL 表示使用听筒模式
+//        // AudioManager.STREAM_MUSIC 表示使用扬声器模式
+        player.start(AudioManager.STREAM_VOICE_CALL);
+
+//        // 如果中途切换播放设备，重新调用 start，传入指定的 streamType 即可。player 会自动停止播放，然后再以新的 streamType 重新开始播放。
+//        // 如果需要从中断的地方继续播放，需要外面自己记住已经播放过的位置，然后在 onPrepared 回调中调用 seekTo
+//        player.seekTo(pausedPosition);
+
+//        // 主动停止播放
+//        player.stop();
+    }
+
+    // 定义录音过程回调对象
+    IAudioRecordCallback callback = new IAudioRecordCallback() {
+        /**
+         * 录音器已就绪，提供此接口用于在录音前关闭本地音视频播放（可选）
+         */
+        @Override
+        public void onRecordReady() {
+            Log.e(TAG, "onRecordReady: ");
+        }
+
+        /**
+         * 开始录音回调
+         *
+         * @param audioFile  录音文件
+         * @param recordType 文件类型
+         */
+        @Override
+        public void onRecordStart(File audioFile, RecordType recordType) {
+            Log.e(TAG, "onRecordStart: "+audioFile.getAbsolutePath() + ", "+audioFile.getName() + ", " +audioFile.getUsableSpace() +", "+ audioFile.getPath());
+        }
+
+        /**
+         * 录音结束，成功
+         *
+         * @param audioFile   录音文件
+         * @param audioLength 录音时间长度
+         * @param recordType  文件类型
+         */
+        @Override
+        public void onRecordSuccess(File audioFile, long audioLength, RecordType recordType) {
+            Log.e(TAG, "onRecordSuccess: "+audioFile.getAbsolutePath() + ", "+audioFile.getName() + ", " +audioFile.getUsableSpace() +", "+ audioFile.getPath() + ", audioLength = " + audioLength);
+            audioFileRecord = audioFile;
+        }
+
+        /**
+         * 录音结束，出错
+         */
+        @Override
+        public void onRecordFail() {
+            Log.e(TAG, "onRecordFail: ");
+        }
+
+        /**
+         * 录音结束， 用户主动取消录音
+         */
+        @Override
+        public void onRecordCancel() {
+            Log.e(TAG, "onRecordCancel: ");
+        }
+
+        /**
+         * 到达指定的最长录音时间
+         *
+         * @param maxTime 录音文件时间长度限制
+         */
+        @Override
+        public void onRecordReachedMaxTime(int maxTime) {
+            Log.e(TAG, "onRecordReachedMaxTime: maxTime = " + maxTime);
+        }
+    };
+
+    public void remoteRecord(View view){
+        RetrofitWrapper ins = RetrofitWrapper.getInstance();
+        IApiService ser = ins.create(IApiService.class);
+        Call<String> str = ser.urlAddress();
+        str.enqueue(new Callback<String>() {
+            @Override
+            public void onResponse(Call<String> call, Response<String> response) {
+                Log.e(TAG, "onResponse: code = " + response.code());
+                if (response.isSuccessful()) {
+                    showToast("成功");
+                    Log.e(TAG, "body = " + response.body());
+                } else {
+                    showToast("失败");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<String> call, Throwable t) {
+                Log.e(TAG, "onFailure: " + t.getMessage());
+            }
+        });
     }
 }

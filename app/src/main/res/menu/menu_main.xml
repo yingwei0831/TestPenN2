@@ -7,6 +7,10 @@
     <!--app:showAsAction="never" />-->
 
     <item
+        android:id="@+id/play_record"
+        android:title="@string/playRecord"
+        android:showAsAction="withText"/>
+    <item
         android:id="@+id/action_create"
         android:showAsAction="never"
         android:title="@string/createChatRoom" />

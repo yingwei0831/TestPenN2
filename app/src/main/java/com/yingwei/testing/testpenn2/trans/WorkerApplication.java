@@ -71,9 +71,9 @@ public class WorkerApplication extends Application {
                     AVChatManager.getInstance().sendControlCommand(AVChatControlCommand.BUSY, null);
                     return;
                 }
-                Bundle bundle = new Bundle();
-                bundle.putSerializable("data", chatData);
-                CallActivity.startActivity(DemoCache.getContext(), bundle);
+//                Bundle bundle = new Bundle();
+//                bundle.putSerializable("data", chatData);
+//                CallActivity.startActivityForResult(DemoCache.getContext(), bundle);
             }
         }, register);
     }

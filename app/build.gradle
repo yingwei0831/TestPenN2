@@ -55,4 +55,14 @@ dependencies {
 //    compile files('libs/nim-lucene-3.5.0.jar')
 //    compile files('libs/nim-rts-3.5.0.jar')
 //    compile files('libs/nrtc-sdk.jar')
+    //retrofit网络框架
+    compile 'com.squareup.retrofit2:retrofit:2.2.0'
+    compile 'com.google.code.gson:gson:2.8.0'
+    compile 'com.squareup.okhttp3:okhttp:3.6.0'
+    //与Retrofit搭配使用
+    compile 'com.squareup.retrofit2:converter-scalars:2.2.0'
+    compile 'com.squareup.retrofit2:converter-gson:2.2.0'
+    compile 'com.squareup.retrofit2:adapter-rxjava:2.2.0'
+    //cookie 与retrofit结合使用
+    compile 'com.squareup.okhttp3:okhttp-urlconnection:3.6.0'
 }
