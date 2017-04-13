@@ -104,21 +104,21 @@
         <receiver android:name="com.netease.nimlib.service.ResponseReceiver" />
 
         <!-- 安卓保活配置 -->
-        <service
-            android:name="com.netease.cosine.core.CosineService"
-            android:process=":cosine" />
+        <!--<service-->
+            <!--android:name="com.netease.cosine.core.CosineService"-->
+            <!--android:process=":cosine" />-->
 
-        <receiver
-            android:name="com.netease.cosine.target.CosineReceiver"
-            android:exported="true"
-            android:process=":cosine" />
+        <!--<receiver-->
+            <!--android:name="com.netease.cosine.target.CosineReceiver"-->
+            <!--android:exported="true"-->
+            <!--android:process=":cosine" />-->
 
-        <meta-data
-            android:name="com.netease.cosine.target"
-            android:value="" />
-        <meta-data
-            android:name="com.netease.cosine.target.receiver"
-            android:value="com.netease.nimlib.service.NimReceiver" />
+        <!--<meta-data-->
+            <!--android:name="com.netease.cosine.target"-->
+            <!--android:value="" />-->
+        <!--<meta-data-->
+            <!--android:name="com.netease.cosine.target.receiver"-->
+            <!--android:value="com.netease.nimlib.service.NimReceiver" />-->
 
         <!-- 申明白板会话的广播接收器，第三方APP集成时，action中的com.netease.nim.demo请替换为自己的包名 -->
         <receiver

@@ -28,6 +28,10 @@ public class DotManager {
         this.handler.postDelayed(timerTask, TIMER_TASK_PERIOD); // 立即开启定时器
     }
 
+    public void end() {
+        this.handler.removeCallbacks(timerTask);
+    }
+
     public void registerTransactionObserver(DotObserver o) {
         DotCenter.getInstance().registerObserver(sessionId, o);
     }

@@ -97,7 +97,6 @@ public class AVChatActivity extends AppCompatActivity implements IPenMsgListener
 
         FrameLayout view = (FrameLayout) findViewById(R.id.content_view);
         view.addView(mSampleView);
-//        setContentView(mSampleView);
 
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, new Intent(Const.Broadcast.ACTION_PEN_UPDATE), PendingIntent.FLAG_UPDATE_CURRENT); //"firmware_update"
 
@@ -247,7 +246,7 @@ public class AVChatActivity extends AppCompatActivity implements IPenMsgListener
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.menu_avchat, menu);
         return super.onCreateOptionsMenu(menu);
     }
 

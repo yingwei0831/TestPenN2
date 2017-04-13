@@ -81,9 +81,9 @@ public class MainActivity extends Activity {
             // Ignore
         }
 
-        mSampleView = new SampleView( this );
+//        mSampleView = new SampleView( this );
 
-        setContentView( mSampleView );
+//        setContentView( mSampleView );
 
         PendingIntent pendingIntent = PendingIntent.getBroadcast( this, 0, new Intent( "firmware_update" ), PendingIntent.FLAG_UPDATE_CURRENT );
 

@@ -66,6 +66,13 @@ public class SampleView extends SurfaceView implements SurfaceHolder.Callback, D
         mSampleThread = new SampleThread(this.getHolder(), this);
     }
 
+    public void initTransactionManager(Context context, String sessionId, String toAccount){
+        transactionManager = new DotManager(sessionId, toAccount, context);
+        transactionManager.registerTransactionObserver(this);
+    }
+
+    //--------以上是一种初始化方式，以下是一种初始化方式---------
+
     public SampleView(Context context, String sessionId, String toAccount) {
         super(context);
 

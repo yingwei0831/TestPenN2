@@ -29,9 +29,15 @@ import com.netease.nimlib.sdk.media.player.OnPlayListener;
 import com.netease.nimlib.sdk.media.record.AudioRecorder;
 import com.netease.nimlib.sdk.media.record.IAudioRecordCallback;
 import com.netease.nimlib.sdk.media.record.RecordType;
+import com.yingwei.testing.testpenn2.Const;
 import com.yingwei.testing.testpenn2.R;
+import com.yingwei.testing.testpenn2.im.confit.AuthPreferences;
+import com.yingwei.testing.testpenn2.model.BaseResponse;
+import com.yingwei.testing.testpenn2.model.fetch.AddressSaveRequest;
+import com.yingwei.testing.testpenn2.model.response.MsgResponse;
 import com.yingwei.testing.testpenn2.retrofitutil.RetrofitWrapper;
 import com.yingwei.testing.testpenn2.retrofitutil.intf.IApiService;
+import com.yingwei.testing.testpenn2.util.SPUtils;
 
 import java.io.File;
 import java.util.Map;
@@ -203,6 +209,7 @@ public class CallActivity extends AppCompatActivity {
         public void onSuccess(Void aVoid) {
             showToast("同意接听（被叫方）");
             findViewById(R.id.iv_receive).setVisibility(View.INVISIBLE);
+            saveAddress();
         }
 
         @Override
@@ -257,6 +264,35 @@ public class CallActivity extends AppCompatActivity {
             public void onException(Throwable throwable) {
                 showToast("发起结束通话异常");
                 Log.e(TAG, "发起结束通话异常");
+            }
+        });
+    }
+
+    private void saveAddress() {
+        int taskId = (int) SPUtils.get(getApplicationContext(), Const.KEY_TASK_ID, TestConnectActivity.taskId);
+        Log.e(TAG, "save taskId = " + taskId);
+        SPUtils.put(getApplicationContext(), Const.KEY_TASK_ID, taskId+1);
+        Log.e(TAG, "saved taskId = " + SPUtils.get(getApplicationContext(), Const.KEY_TASK_ID, TestConnectActivity.taskId));
+        AddressSaveRequest request = new AddressSaveRequest(
+                String.valueOf(mChatData.getChatId()),
+                AuthPreferences.getUserAccount(),
+                mChatData.getAccount(),
+                String.valueOf(taskId),
+                "AUDIO");
+        Log.e(TAG, "request = " + request);
+        RetrofitWrapper ins = RetrofitWrapper.getInstance();
+        IApiService ser = ins.create(IApiService.class);
+        Call<BaseResponse<MsgResponse>> res = ser.addressSave(request);
+        Log.e(TAG, "account = " + AuthPreferences.getUserAccount() +", toAccount = " + mChatData.getAccount() +", channelId = " + mChatData.getChatId());
+        res.enqueue(new Callback<BaseResponse<MsgResponse>>() {
+            @Override
+            public void onResponse(Call<BaseResponse<MsgResponse>> call, Response<BaseResponse<MsgResponse>> response) {
+                Log.e(TAG, "onResponse: " + response.body());
+            }
+
+            @Override
+            public void onFailure(Call<BaseResponse<MsgResponse>> call, Throwable t) {
+                Log.e(TAG, "onFailure: " + t.getMessage());
             }
         });
     }
@@ -432,7 +468,7 @@ public class CallActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onDeviceEvent(int i, String s) {
+        public void onDeviceEvent(int code, String s) {
             Log.e(TAG, "onDeviceEvent");
         }
 

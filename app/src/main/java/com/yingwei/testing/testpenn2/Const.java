@@ -2,6 +2,8 @@ package com.yingwei.testing.testpenn2;
 
 public class Const
 {
+	public final static String KEY_TASK_ID = "taskId";
+
 	public class Setting 
 	{
 		public final static String KEY_PASSWORD = "password";

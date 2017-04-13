@@ -2,6 +2,7 @@ package com.yingwei.testing.testpenn2.view;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.app.DownloadManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -15,8 +16,11 @@ import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.media.AudioManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
+import android.os.Message;
 import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -67,6 +71,13 @@ import com.yingwei.testing.testpenn2.doodle.Transaction;
 import com.yingwei.testing.testpenn2.doodle.action.MyPath;
 import com.yingwei.testing.testpenn2.im.business.LogoutHelper;
 import com.yingwei.testing.testpenn2.im.confit.AuthPreferences;
+import com.yingwei.testing.testpenn2.model.BaseResponse;
+import com.yingwei.testing.testpenn2.model.fetch.AddressDownLoadRequest;
+import com.yingwei.testing.testpenn2.model.fetch.AddressSaveRequest;
+import com.yingwei.testing.testpenn2.model.response.AddressDownLoad;
+import com.yingwei.testing.testpenn2.model.response.MsgResponse;
+import com.yingwei.testing.testpenn2.retrofitutil.RetrofitWrapper;
+import com.yingwei.testing.testpenn2.retrofitutil.intf.IApiService;
 import com.yingwei.testing.testpenn2.trans.DemoCache;
 import com.yingwei.testing.testpenn2.trans.Dot;
 import com.yingwei.testing.testpenn2.trans.PhoneCallStateObserver;
@@ -74,16 +85,20 @@ import com.yingwei.testing.testpenn2.trans.DotCenter;
 import com.yingwei.testing.testpenn2.trans.DotManager;
 import com.yingwei.testing.testpenn2.trans.util.ScreenUtil;
 import com.yingwei.testing.testpenn2.trans.util.log.LogUtil;
+import com.yingwei.testing.testpenn2.util.SPUtils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import kr.neolab.sdk.ink.structure.DotType;
 import kr.neolab.sdk.ink.structure.Stroke;
 import kr.neolab.sdk.pen.IPenCtrl;
 import kr.neolab.sdk.pen.PenCtrl;
@@ -91,6 +106,12 @@ import kr.neolab.sdk.pen.offline.OfflineFileParser;
 import kr.neolab.sdk.pen.penmsg.IPenMsgListener;
 import kr.neolab.sdk.pen.penmsg.PenMsg;
 import kr.neolab.sdk.pen.penmsg.PenMsgType;
+import okhttp3.ResponseBody;
+import okio.BufferedSink;
+import okio.Okio;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 import static android.os.Looper.getMainLooper;
 
@@ -109,7 +130,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
     private IPenCtrl iPenCtrl;
     private SampleView mSampleView;
 
-    private DotManager transactionManager; // 数据发送管理器
+//    private DotManager transactionManager; // 数据发送管理器
 
     private String sessionId; //建立通道后的返回值，必须记住 通道id
     private String toAccount; //通道中，对面 客户id
@@ -129,6 +150,8 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
     private String fileName;
 //    private long pausedPosition;
 
+    private int pageId;
+    private boolean flip; //翻页
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -159,7 +182,6 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
 
         doodleView = (DoodleView) findViewById(R.id.doodle_view_transaction);
         doodleView.setEnableView(true);
-        initDoodleView(null);
         doodleView.setZOrderOnTop(true);
         doodleView.getHolder().setFormat(PixelFormat.TRANSPARENT);
 
@@ -190,6 +212,8 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         AVChatManager.getInstance().observeHangUpNotification(callHangupObserver, false);
         registerAVChatStateObserver(false);
         registerReceiverData(false);
+
+        registerObserverReceiverData(false);
     }
 
     private void registerAVChatIncomingCallObserver(final boolean register) {
@@ -317,11 +341,106 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         } else if (requestCode == 881) { //TODO 登录
             account = AuthPreferences.getUserAccount();
         } else if (requestCode == 11) { //录制了音视频
-            if (data != null) {
-                filePath = data.getStringExtra("filePath");
-                fileName = data.getStringExtra("fileName");
+//            if (data != null) {
+//                filePath = data.getStringExtra("filePath");
+//                fileName = data.getStringExtra("fileName");
+//            }
+            //请求通话音频录制地址
+//            saveAddress();
+            requestAddress();
+        }
+    }
+
+    static int taskId = 6;
+
+    //请求通话音频录制地址
+    private void requestAddress() {
+        Log.e(TAG, "account = " + account +", toAccount = " + toAccount +", channelId = " + channelId);
+        if (!account.equals(user0)){
+            return;
+        }
+//        channelid = "190982202757249" taskId = "11" studentMobile = "13260398606" teacherMobile = "13260398607"
+        AddressDownLoadRequest request = new AddressDownLoadRequest("13260398606", "13260398607", "11");
+        Log.e(TAG, "request = " + request);
+        RetrofitWrapper ins = RetrofitWrapper.getInstance();
+        IApiService ser = ins.create(IApiService.class);
+        Call<BaseResponse<AddressDownLoad>> str = ser.addressDownLoad(request);
+        str.enqueue(new Callback<BaseResponse<AddressDownLoad>>() {
+            @Override
+            public void onResponse(Call<BaseResponse<AddressDownLoad>> call, Response<BaseResponse<AddressDownLoad>> response) {
+                Log.e(TAG, "onResponse: " + response.body());
+                String loadAddress = response.body().getData().getWhiteboardURL();
+//                downloadFile(loadAddress);
+            }
+
+            @Override
+            public void onFailure(Call<BaseResponse<AddressDownLoad>> call, Throwable t) {
+                Log.e(TAG, "onFailure: " + t.getMessage());
+            }
+        });
+    }
+
+    private File downloadFile;
+    private String savePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/AUDIO/taskManager";
+    private Handler handler = new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what){
+                case 112:
+                    playRecord();
+                    break;
             }
         }
+    };
+    /**
+     * 子线程执行
+     */
+    private void downloadFile(String loadAddress) {
+        final File file = new File(savePath);
+        if (!file.exists()) {
+            boolean b = file.mkdirs();
+            Log.e(TAG, "result = " + b);
+        }
+        fileName = loadAddress.substring(loadAddress.indexOf("-")+1, loadAddress.lastIndexOf("-")) + ".aac";
+        Log.e(TAG, "loadAddress = " + loadAddress);
+        Log.e(TAG, "fileName = " + fileName);
+        downloadFile = new File(file, fileName);
+
+        RetrofitWrapper.getInstance().create(IApiService.class).downloadFileWithDynamicUrlSync(loadAddress).enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                if (response.isSuccessful()){
+                    BufferedSink sink = null;
+                    //下载文件到本地
+                    try {
+                        sink = Okio.buffer(Okio.sink(downloadFile));
+                        sink.writeAll(response.body().source());
+                    } catch (Exception e) {
+                        if (e != null) {
+                            e.printStackTrace();
+                        }
+                    } finally {
+                        try {
+                            if (sink != null) sink.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    Log.e("DownloadActivity", "下载成功");
+
+                    handler.sendEmptyMessage(112);
+
+                }else{
+                    Log.e("DownloadActivity", "==responseCode=="+response.code() + "");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Log.e("下载失败", t.getMessage());
+            }
+        });
     }
 
     @Override
@@ -333,37 +452,53 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
                 ", " + "pressure = " + pressure + ", " + "timestamp = " + timestamp + ", " + "type = " + type + ", " + "color = " + color);
         sendPenDotByBroadcast(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
 
-//        DotType actionType = DotType.getPenAction(type);
-//        switch (actionType) {
-//            case PEN_ACTION_DOWN:
-//                onPaintActionStart(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
-//                break;
-//            case PEN_ACTION_MOVE:
-//                onPaintActionMove(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
-//                break;
-//            case PEN_ACTION_UP:
-//                onPaintActionEnd(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
-//                break;
-//        }
+        if (this.pageId == 0){
+            this.pageId = pageId;
+        }else{
+            if (this.pageId != pageId){
+                //TODO 翻页
+                flip = true;
+                this.pageId = pageId;
+            }else{
+                flip = false;
+            }
+        }
+        if (flip){
+            mSampleView.clear();
+            mSampleView.sendFlipData(noteId, pageId, 64, 1);
+        }
+
+        DotType actionType = DotType.getPenAction(type);
+        switch (actionType) {
+            case PEN_ACTION_DOWN:
+                onPaintActionStart(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
+                break;
+            case PEN_ACTION_MOVE:
+                onPaintActionMove(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
+                break;
+            case PEN_ACTION_UP:
+                onPaintActionEnd(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
+                break;
+        }
     }
 
     private void onPaintActionStart(int sectionId, int ownerId, int noteId, int pageId,
                                     int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
-        transactionManager.sendStartTransaction(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
-        mSampleView.saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.START, x, y, fx, fy, pressure, type, timestamp, color), false, false, false);
+        mSampleView.sendStartTransaction(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
+        mSampleView.saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.START, x, y, fx, fy, pressure, type, timestamp, color), false, false, flip);
     }
 
     private void onPaintActionMove(int sectionId, int ownerId, int noteId, int pageId,
                                    int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
 
-        transactionManager.sendMoveTransaction(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
-        mSampleView.saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.MOVE, x, y, fx, fy, pressure, type, timestamp, color), false, false, false);
+        mSampleView.sendMoveTransaction(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
+        mSampleView.saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.MOVE, x, y, fx, fy, pressure, type, timestamp, color), false, false, flip);
     }
 
     private void onPaintActionEnd(int sectionId, int ownerId, int noteId, int pageId,
                                   int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
-        transactionManager.sendEndTransaction(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
-        mSampleView.saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.END, x, y, fx, fy, pressure, type, timestamp, color), false, false, false);
+        mSampleView.sendEndTransaction(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
+        mSampleView.saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.END, x, y, fx, fy, pressure, type, timestamp, color), false, false, flip);
     }
 
     @Override
@@ -414,7 +549,9 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.play_record:
-                playRecord();
+//                playRecord();
+                downloadFile("http://nim.nos.netease.com/NDI2MTYxNA==/bmltYV8wXzE5MDk4MjIwMjc1NzI0OV8xNDkyMDQ4NjYzNTg4XzlhZWI2ZWM4LWY3OTgtNGY0Ny05YjEyLTE1MGI3YTVhZGE1Nw==?download=0-\n" +
+                        "190982202757249-mix.aac");
                 break;
             case R.id.action_create: //注册
                 register(880);
@@ -461,53 +598,56 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
      * 播放录音
      */
     private void playRecord() {
-        startActivity(new Intent( getApplicationContext(), CallActivity.class));
+//        startActivity(new Intent( getApplicationContext(), CallActivity.class));
 //        Log.e(TAG, "fileName = " + fileName + ", filePath = " + filePath);
-//        // 定义一个播放进程回调类
-//        OnPlayListener listener = new OnPlayListener() {
-//
-//            // 音频转码解码完成，会马上开始播放了
-//            public void onPrepared() {
-//                Log.e(TAG, "onPrepared: ");
-//            }
-//
-//            // 播放结束
-//            public void onCompletion() {
-//                Log.e(TAG, "onCompletion: " );
-//            }
-//
-//            // 播放被中断了
-//            public void onInterrupt() {
-//                Log.e(TAG, "onInterrupt: ");
-//            }
-//
-//            // 播放过程中出错。参数为出错原因描述
-//            public void onError(String error) {
-//                Log.e(TAG, "onError: " + error);
-//            }
-//
-//            // 播放进度报告，每隔 500ms 会回调一次，告诉当前进度。 参数为当前进度，单位为毫秒，可用于更新 UI
-//            public void onPlaying(long curPosition) {
-//                Log.e(TAG, "onPlaying: " + curPosition);
-//            }
-//        };
-//
-//        // 构造播放器对象
-//        AudioPlayer player = new AudioPlayer(getApplicationContext(), filePath, listener);
-//        player.setDataSource(fileName);
-//
-//        // 开始播放。需要传入一个 Stream Type 参数，表示是用听筒播放还是扬声器。取值可参见
-//        // android.media.AudioManager#STREAM_***
-//        // AudioManager.STREAM_VOICE_CALL 表示使用听筒模式
-//        // AudioManager.STREAM_MUSIC 表示使用扬声器模式
-//        player.start(AudioManager.STREAM_VOICE_CALL); //streamType
-//
-//        // 如果中途切换播放设备，重新调用 start，传入指定的 streamType 即可。player 会自动停止播放，然后再以新的 streamType 重新开始播放。
-//        // 如果需要从中断的地方继续播放，需要外面自己记住已经播放过的位置，然后在 onPrepared 回调中调用 seekTo
-////        player.seekTo(pausedPosition);
-//
-//        // 主动停止播放
-////        player.stop();
+        // 定义一个播放进程回调类
+        OnPlayListener listener = new OnPlayListener() {
+
+            // 音频转码解码完成，会马上开始播放了
+            public void onPrepared() {
+                Log.e(TAG, "onPrepared: ");
+            }
+
+            // 播放结束
+            public void onCompletion() {
+                Log.e(TAG, "onCompletion: " );
+            }
+
+            // 播放被中断了
+            public void onInterrupt() {
+                Log.e(TAG, " onInterrupt: ");
+            }
+
+            // 播放过程中出错。参数为出错原因描述
+            public void onError(String error) {
+                Log.e(TAG, " onError: " + error);
+            }
+
+            // 播放进度报告，每隔 500ms 会回调一次，告诉当前进度。 参数为当前进度，单位为毫秒，可用于更新 UI
+            public void onPlaying(long curPosition) {
+                Log.e(TAG, "onPlaying: " + curPosition);
+            }
+        };
+//        filePath = "http://nim.nos.netease.com/NDI2MTYxNA==/bmltYV8wXzE5MDk3MTAxOTM5ODUyOV8xNDkxOTYxMjgxMzU1XzFjNTY3MWNiLWU3ZWQtNDEwNC04MjRiLWVkMmZjMTM3ZmI5ZQ==?download=0-190971019398529-mix.aac";
+//        fileName = "0-190971019398529-mix.aac";
+
+        // 构造播放器对象
+        String path = downloadFile.getAbsolutePath();
+        Log.e(TAG, "path = " + path );
+        AudioPlayer player = new AudioPlayer(getApplicationContext(), path, listener);
+
+        // 开始播放。需要传入一个 Stream Type 参数，表示是用听筒播放还是扬声器。取值可参见
+        // android.media.AudioManager#STREAM_***
+        // AudioManager.STREAM_VOICE_CALL 表示使用听筒模式
+        // AudioManager.STREAM_MUSIC 表示使用扬声器模式
+        player.start(AudioManager.STREAM_VOICE_CALL); //streamType
+
+        // 如果中途切换播放设备，重新调用 start，传入指定的 streamType 即可。player 会自动停止播放，然后再以新的 streamType 重新开始播放。
+        // 如果需要从中断的地方继续播放，需要外面自己记住已经播放过的位置，然后在 onPrepared 回调中调用 seekTo
+//        player.seekTo(pausedPosition);
+
+        // 主动停止播放
+//        player.stop();
     }
 
     private void callAccountBin() { //发起白板会话通道
@@ -587,7 +727,11 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
                 registerReceiverData(true); //发起会话（对方接受后），或者接受了会话请求后，需要立即注册对数据通道状态的监听。
 
                 // TODO 进入会话界面
-                goChatRoom(sessionId, rtsCalleeAckEvent.getAccount(), channelId);
+                toAccount = rtsCalleeAckEvent.getAccount();
+                mSampleView.initTransactionManager(getApplicationContext(), sessionId, toAccount);
+//                goChatRoom(sessionId, rtsCalleeAckEvent.getAccount(), channelId);
+                initDoodleView(toAccount);
+                registerObserverReceiverData(true);
             } else if (rtsCalleeAckEvent.getEvent() == RTSEventType.CALLEE_ACK_REJECT) {
                 // 被拒绝，结束会话
                 showToast("通道请求被拒绝");
@@ -625,7 +769,6 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         });
     }
 
-    //    boolean accept;
     long channelId;
 
     //监听会话请求/数据通道请求（被叫方）
@@ -643,13 +786,11 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
                     sessionId = rtsData.getLocalSessionId();
                     toAccount = rtsData.getAccount();
                     showToast("已接受通信请求");
-//                    accept = false;
                     Log.e(TAG, "已接受通信请求");
                     acceptTunData(toAccount, channelId);
                 } else {
                     showToast("已拒绝通信请求");
                     Log.e(TAG, "已拒绝通信请求");
-//                    accept = true;
                     denyTunData();
                 }
             }
@@ -684,8 +825,12 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
             @Override
             public void onSuccess(Boolean aBoolean) {
                 showToast("已接受请求: " + aBoolean.booleanValue());
-                goChatRoom(sessionId, account, channelId);
+                toAccount = account;
+                mSampleView.initTransactionManager(getApplicationContext(), sessionId, toAccount);
+                initDoodleView(toAccount);
+//                goChatRoom(sessionId, account, channelId);
                 registerReceiverData(true); //发起会话（对方接受后），或者接受了会话请求后，需要立即注册对数据通道状态的监听。
+                registerObserverReceiverData(true);
             }
 
             @Override
@@ -766,6 +911,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
     private void showToast(String msg) {
         Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
     }
+
     String user0 = "13260398606";
     String user1 = "13260398607";
 
@@ -783,11 +929,11 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
 //        RTSOptions options = new RTSOptions();
 //        options.setRecordAudioTun(true).setRecordDataTun(true);
 
+        toAccount = account.equals(user0) ? user1 : user0;
         AVChatOptionalConfig configs = new AVChatOptionalConfig();
         configs.enableServerRecordAudio(true);  //是否打开服务器录制音频,服务器录制需要开通相关业务。
         AVChatNotifyOption notifyOption = new AVChatNotifyOption();
-
-        AVChatManager.getInstance().call(account.equals(user0) ? user1 : user0,
+        AVChatManager.getInstance().call(toAccount,
                 AVChatType.AUDIO, configs, notifyOption, new AVChatCallback<AVChatData>() {
                     @Override
                     public void onSuccess(AVChatData avChatData) {
@@ -812,6 +958,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
     }
 
     private void goToCallView(AVChatData avChatData) {
+        channelId = avChatData.getChatId();
         Intent intents = new Intent(getApplicationContext(), CallActivity.class);
         intents.putExtra("data", avChatData);
         startActivityForResult(intents, 11);
@@ -1077,6 +1224,11 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         mNotifyManager.notify(0, mBuilder.build());
     }
 
+    private void registerObserverReceiverData(boolean register) {
+        Log.e(TAG, "sessionId = " + sessionId);
+        RTSManager.getInstance().observeReceiveData(sessionId, receiveDataObserver, register);
+    }
+
     /**
      * 监听收到对方发送的通道数据
      */
@@ -1153,7 +1305,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
                 break;
         }
         Log.e(TAG, "用户状态：" + msg);
-        Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(), msg+": " +AuthPreferences.getUserAccount(), Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -1226,7 +1378,6 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
 
         doodleView.init(sessionId, account, DoodleView.Mode.BOTH, Color.TRANSPARENT, Color.BLACK, getApplicationContext(), this);
 
-
         doodleView.setPaintSize(3);
         doodleView.setPaintType(ActionTypeEnum.Path.getValue());
 
@@ -1237,13 +1388,13 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
                 Rect frame = new Rect();
                 getWindow().getDecorView().getWindowVisibleDisplayFrame(frame);
                 int statusBarHeight = frame.top;
-                Log.i("Doodle", "statusBarHeight =" + statusBarHeight);
+                Log.i("Doodle", "statusBarHeight = " + statusBarHeight);
 
                 int marginTop = doodleView.getTop();
-                Log.i("Doodle", "doodleView marginTop =" + marginTop);
+                Log.i("Doodle", "doodleView marginTop = " + marginTop);
 
                 int marginLeft = doodleView.getLeft();
-                Log.i("Doodle", "doodleView marginLeft =" + marginLeft);
+                Log.i("Doodle", "doodleView marginLeft = " + marginLeft);
 
                 //TODO toolBar的高度
                 int toolBarHeight = 0;

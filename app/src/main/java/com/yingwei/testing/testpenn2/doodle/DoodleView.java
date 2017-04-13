@@ -364,8 +364,8 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
         }
 
         onActionStart(x, y);
-//        transactionManager.sendStartTransaction(x / xZoom, y / yZoom, paintChannel.paintColor);
-//        saveUserData(DemoCache.getAccount(), new Transaction(Transaction.ActionStep.START, x / xZoom, y / yZoom, paintChannel.paintColor), false, false, false);
+        transactionManager.sendStartTransaction(x / xZoom, y / yZoom, paintChannel.paintColor);
+        saveUserData(DemoCache.getAccount(), new Transaction(Transaction.ActionStep.START, x / xZoom, y / yZoom, paintChannel.paintColor), false, false, false);
     }
 
     private void onPaintActionMove(float x, float y) {
@@ -378,8 +378,8 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
         }
 
         onActionMove(x, y);
-//        transactionManager.sendMoveTransaction(x / xZoom, y / yZoom, paintChannel.paintColor);
-//        saveUserData(DemoCache.getAccount(), new Transaction(Transaction.ActionStep.MOVE, x / xZoom, y / yZoom, paintChannel.paintColor), false, false, false);
+        transactionManager.sendMoveTransaction(x / xZoom, y / yZoom, paintChannel.paintColor);
+        saveUserData(DemoCache.getAccount(), new Transaction(Transaction.ActionStep.MOVE, x / xZoom, y / yZoom, paintChannel.paintColor), false, false, false);
     }
 
     private void onPaintActionEnd(float x, float y) {
@@ -388,8 +388,8 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
         }
 
         onActionEnd();
-//        transactionManager.sendEndTransaction(lastX / xZoom, lastY / yZoom, paintChannel.paintColor);
-//        saveUserData(DemoCache.getAccount(), new Transaction(Transaction.ActionStep.END, lastX / xZoom, lastY / yZoom, paintChannel.paintColor), false, false, false);
+        transactionManager.sendEndTransaction(lastX / xZoom, lastY / yZoom, paintChannel.paintColor);
+        saveUserData(DemoCache.getAccount(), new Transaction(Transaction.ActionStep.END, lastX / xZoom, lastY / yZoom, paintChannel.paintColor), false, false, false);
     }
 
 
