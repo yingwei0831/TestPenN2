@@ -47,6 +47,11 @@ import com.netease.nimlib.sdk.avchat.model.AVChatOptionalConfig;
 import com.netease.nimlib.sdk.avchat.model.AVChatVideoFrame;
 import com.netease.nimlib.sdk.media.player.AudioPlayer;
 import com.netease.nimlib.sdk.media.player.OnPlayListener;
+import com.netease.nimlib.sdk.msg.MessageBuilder;
+import com.netease.nimlib.sdk.msg.MsgService;
+import com.netease.nimlib.sdk.msg.constant.MsgTypeEnum;
+import com.netease.nimlib.sdk.msg.constant.SessionTypeEnum;
+import com.netease.nimlib.sdk.msg.model.IMMessage;
 import com.netease.nimlib.sdk.rts.RTSCallback;
 import com.netease.nimlib.sdk.rts.RTSChannelStateObserver;
 import com.netease.nimlib.sdk.rts.RTSManager;
@@ -114,6 +119,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 import static android.os.Looper.getMainLooper;
+import static com.netease.nimlib.sdk.msg.constant.MsgTypeEnum.audio;
 
 public class TestConnectActivity extends AppCompatActivity implements IPenMsgListener, DoodleView.FlipListener {
 
@@ -214,6 +220,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         registerReceiverData(false);
 
         registerObserverReceiverData(false);
+        observerAccountReturn(false);
     }
 
     private void registerAVChatIncomingCallObserver(final boolean register) {
@@ -351,16 +358,42 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         }
     }
 
+    private void saveAddress() {
+
+        AddressSaveRequest request = new AddressSaveRequest(
+                String.valueOf(channelId),
+                AuthPreferences.getUserAccount(),
+                toAccount,
+                "20",
+                "UNKNOWN");
+        Log.e(TAG, "request = " + request);
+        RetrofitWrapper ins = RetrofitWrapper.getInstance();
+        IApiService ser = ins.create(IApiService.class);
+        Call<BaseResponse<MsgResponse>> res = ser.addressSave(request);
+        Log.e(TAG, "account = " + AuthPreferences.getUserAccount() +", toAccount = " + toAccount +", channelId = " + channelId);
+        res.enqueue(new Callback<BaseResponse<MsgResponse>>() {
+            @Override
+            public void onResponse(Call<BaseResponse<MsgResponse>> call, Response<BaseResponse<MsgResponse>> response) {
+                Log.e(TAG, "onResponse: " + response.body());
+            }
+
+            @Override
+            public void onFailure(Call<BaseResponse<MsgResponse>> call, Throwable t) {
+                Log.e(TAG, "onFailure: " + t.getMessage());
+            }
+        });
+    }
+
     static int taskId = 6;
 
     //请求通话音频录制地址
     private void requestAddress() {
-        Log.e(TAG, "account = " + account +", toAccount = " + toAccount +", channelId = " + channelId);
-        if (!account.equals(user0)){
-            return;
-        }
+//        Log.e(TAG, "account = " + account +", toAccount = " + toAccount +", channelId = " + channelId);
+//        if (!account.equals(user0)){
+//            return;
+//        }
 //        channelid = "190982202757249" taskId = "11" studentMobile = "13260398606" teacherMobile = "13260398607"
-        AddressDownLoadRequest request = new AddressDownLoadRequest("13260398606", "13260398607", "11");
+        AddressDownLoadRequest request = new AddressDownLoadRequest("13260398607", "13260398606", "20");
         Log.e(TAG, "request = " + request);
         RetrofitWrapper ins = RetrofitWrapper.getInstance();
         IApiService ser = ins.create(IApiService.class);
@@ -370,7 +403,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
             public void onResponse(Call<BaseResponse<AddressDownLoad>> call, Response<BaseResponse<AddressDownLoad>> response) {
                 Log.e(TAG, "onResponse: " + response.body());
                 String loadAddress = response.body().getData().getWhiteboardURL();
-//                downloadFile(loadAddress);
+                downloadFile(loadAddress);
             }
 
             @Override
@@ -390,9 +423,19 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
                 case 112:
                     playRecord();
                     break;
+                case 113:
+                    playBackInfoRecord();
             }
         }
     };
+
+    /**
+     * TODO 播放白板文件
+     */
+    private void playBackInfoRecord() {
+
+    }
+
     /**
      * 子线程执行
      */
@@ -402,7 +445,9 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
             boolean b = file.mkdirs();
             Log.e(TAG, "result = " + b);
         }
-        fileName = loadAddress.substring(loadAddress.indexOf("-")+1, loadAddress.lastIndexOf("-")) + ".aac";
+//fileName = loadAddress.substring(loadAddress.indexOf("-")+1, loadAddress.lastIndexOf("-")) + ".aac";
+//http://nim.nos.netease.com/NDI2MTYxNA==/bmltYV8zNTMxNDkxMjBfMTkwOTk1MTk2NDk5OTY5XzE0OTIxNTAxNzk1NDFfZTE4NGMzMDAtZjFmZC00OWFlLTk5NDktYTE0Y2U3YzQ2Nzcw?download=353149120-190995196499969.gz
+        fileName = loadAddress.substring(loadAddress.lastIndexOf("=")+1);
         Log.e(TAG, "loadAddress = " + loadAddress);
         Log.e(TAG, "fileName = " + fileName);
         downloadFile = new File(file, fileName);
@@ -429,7 +474,8 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
                     }
                     Log.e("DownloadActivity", "下载成功");
 
-                    handler.sendEmptyMessage(112);
+//                    handler.sendEmptyMessage(112);
+                    handler.sendEmptyMessage(113);
 
                 }else{
                     Log.e("DownloadActivity", "==responseCode=="+response.code() + "");
@@ -550,8 +596,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         switch (item.getItemId()) {
             case R.id.play_record:
 //                playRecord();
-                downloadFile("http://nim.nos.netease.com/NDI2MTYxNA==/bmltYV8wXzE5MDk4MjIwMjc1NzI0OV8xNDkyMDQ4NjYzNTg4XzlhZWI2ZWM4LWY3OTgtNGY0Ny05YjEyLTE1MGI3YTVhZGE1Nw==?download=0-\n" +
-                        "190982202757249-mix.aac");
+//                downloadFile("http://nim.nos.netease.com/NDI2MTYxNA==/bmltYV8wXzE5MDk4MjIwMjc1NzI0OV8xNDkyMDQ4NjYzNTg4XzlhZWI2ZWM4LWY3OTgtNGY0Ny05YjEyLTE1MGI3YTVhZGE1Nw==?download=0-190982202757249-mix.aac");
                 break;
             case R.id.action_create: //注册
                 register(880);
@@ -572,8 +617,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
                 LogoutHelper.logout(TestConnectActivity.this, false);
                 break;
             case R.id.action_save_bitmap: //保存图片到本地
-                mDoodleViewBmp = convertViewToBitmap(doodleView.getRootView());
-                Log.e(TAG, "mDoodleViewBmp = " + mDoodleViewBmp);
+                requestAddress();
                 break;
             case R.id.action_connect: //连接
                 connect();
@@ -656,23 +700,28 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
             return;
         }
         List<RTSTunnelType> types = new ArrayList<>(1);
-//        types.add(RTSTunnelType.AUDIO);
+        types.add(RTSTunnelType.AUDIO);
         types.add(RTSTunnelType.DATA);
 
         String pushContent = account + "发起一个会话";
         String extra = "extra_data";
-        RTSOptions options = new RTSOptions(); //.setRecordAudioTun(true).setRecordDataTun(true);
+        RTSOptions options = new RTSOptions().setRecordDataTun(true).setRecordAudioTun(true);
+
         RTSNotifyOption notifyOption = new RTSNotifyOption();
 
         registerTimeOut(true); //监听（发起）创建新通道或接受新通道超时通知
-        sessionId = RTSManager.getInstance().start(account.equals("13260398606") ? "13260398607" : "13260398606", types, options, notifyOption, new RTSCallback<RTSData>() {
+        String user1 = "13260398606";
+        String user2 = "13260398607";
+        toAccount = account.equals(user1) ? user2 : user1;
+        sessionId = RTSManager.getInstance().start(toAccount, types, options, notifyOption, new RTSCallback<RTSData>() {
             @Override
             public void onSuccess(RTSData rtsData) {
-                showToast("发起通话通道成功：" + rtsData.getAccount() + ", " + rtsData.getChannelId() + ", " + rtsData.getExtra() + ", " + rtsData.getLocalSessionId());
-                Log.e(TAG, "发起通话通道成功：" + rtsData.getAccount() + ", " + rtsData.getChannelId() + ", " + rtsData.getExtra() + ", " + rtsData.getLocalSessionId());
+                showToast("发起通话通道成功：" + rtsData.getAccount() + ", " + rtsData.getChannelId() + ", "+ ", " + rtsData.getLocalSessionId());
+                Log.e(TAG, "发起通话通道成功：" + rtsData.getAccount() + ", " + rtsData.getChannelId() + ", " + rtsData.getLocalSessionId() + rtsData.getExtra() );
 
                 observerAccountReturn(true); //监听被叫方回应
                 channelId = rtsData.getChannelId();
+                saveAddress();
             }
 
             @Override
@@ -820,12 +869,14 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
 
     //接受白板通道请求(被叫方)
     private void acceptTunData(final String account, final long channelId) {
-        RTSOptions options = new RTSOptions(); //.setRecordAudioTun(true).setRecordDataTun(true);
+        Log.e(TAG, "接受白板通道请求(被叫方): sessionId = " +sessionId + ", account = " + account + ", toAccount = " + toAccount);
+        RTSOptions options = new RTSOptions();
+        options.setRecordDataTun(true);
+        options.setRecordAudioTun(true);
         RTSManager.getInstance().accept(sessionId, options, new RTSCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean aBoolean) {
                 showToast("已接受请求: " + aBoolean.booleanValue());
-                toAccount = account;
                 mSampleView.initTransactionManager(getApplicationContext(), sessionId, toAccount);
                 initDoodleView(toAccount);
 //                goChatRoom(sessionId, account, channelId);
@@ -843,6 +894,15 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
                 showToast("接受请求异常" + throwable.getMessage());
             }
         });
+
+        // 创建音频消息
+//        IMMessage message = MessageBuilder.createAudioMessage(
+//                toAccount, // 聊天对象的 ID，如果是单聊，为用户帐号，如果是群聊，为群组 ID
+//                SessionTypeEnum.typeOfValue(audio.getValue()), // 聊天类型，单聊或群组
+//                new File("name"), // 音频文件
+//                12000 // 音频持续时间，单位是ms
+//        );
+//        NIMClient.getService(MsgService.class).sendMessage(message, true);
     }
 
     /**
