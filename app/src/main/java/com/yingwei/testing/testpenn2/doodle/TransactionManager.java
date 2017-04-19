@@ -11,7 +11,7 @@ import java.util.List;
  * <p/>
  * Created by huangjun on 2015/6/24.
  */
-class TransactionManager {
+public class TransactionManager {
 
     private final int TIMER_TASK_PERIOD = 30;
 

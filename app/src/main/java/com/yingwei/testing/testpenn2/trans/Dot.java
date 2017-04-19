@@ -213,6 +213,11 @@ public class Dot {
         return this;
     }
 
+    public Dot makeStartTransaction(float x, float y, int rgb) {
+        make(ActionStep.START, x, y, rgb);
+        return this;
+    }
+
     public Dot makeMoveTransaction(int sectionId, int ownerId, int noteId, int pageId, int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
         make(ActionStep.MOVE, sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
         return this;
@@ -220,6 +225,26 @@ public class Dot {
 
     public Dot makeEndTransaction(int sectionId, int ownerId, int noteId, int pageId, int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
         make(ActionStep.END, sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
+        return this;
+    }
+
+    public Dot makeRevokeTransaction() {
+        make(ActionStep.REVOKE);
+        return this;
+    }
+
+    public Dot makeSyncPrepareTransaction() {
+        make(ActionStep.SYNC_PREPARE);
+        return this;
+    }
+
+    public Dot makeClearAckTransaction() {
+        make(ActionStep.CLEAR_ACK);
+        return this;
+    }
+
+    public Dot makeSyncPrepareAckTransaction() {
+        make(ActionStep.SYNC_PREPARE_ACK);
         return this;
     }
 

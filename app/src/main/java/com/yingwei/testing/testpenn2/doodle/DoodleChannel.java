@@ -12,7 +12,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * <p/>
  * Created by huangjun on 2015/6/29.
  */
-class DoodleChannel {
+public class DoodleChannel {
     /**
      * 当前所选的画笔
      */

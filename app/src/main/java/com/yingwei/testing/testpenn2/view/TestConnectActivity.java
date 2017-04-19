@@ -401,14 +401,26 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         str.enqueue(new Callback<BaseResponse<AddressDownLoad>>() {
             @Override
             public void onResponse(Call<BaseResponse<AddressDownLoad>> call, Response<BaseResponse<AddressDownLoad>> response) {
-                Log.e(TAG, "onResponse: " + response.body());
-                String loadAddress = response.body().getData().getWhiteboardURL();
-                downloadFile(loadAddress);
+                Log.e(TAG, "code = " + response.code());
+                if (response.isSuccessful()) {
+                    if (response.body().getErrorMsg() == null) {
+                        Log.e(TAG, "onResponse: " + response.body().getData());
+                        String loadAddress1 = response.body().getData().getAacFileUrl();
+                        String loadAddress2 = response.body().getData().getGzFileUrl();
+                        downloadFile(loadAddress1);
+                        downloadFile(loadAddress2);
+                    }else{
+                        Log.e(TAG, "Error: " + response.body().getErrorMsg());
+                    }
+                }else{
+                    Log.e(TAG, "网络请求异常");
+                }
             }
 
             @Override
             public void onFailure(Call<BaseResponse<AddressDownLoad>> call, Throwable t) {
                 Log.e(TAG, "onFailure: " + t.getMessage());
+
             }
         });
     }
@@ -955,7 +967,10 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         @Override
         public void onNetworkStatusChange(String localSessionId, RTSTunnelType channelType, int value) {
             // 网络信号强弱
-            showToast("网络信号强弱");
+//            showToast("网络信号强弱");
+            Log.e(TAG, "localSessionId = " + localSessionId + "" +
+                    ", channelType = " + channelType.name() +
+                    ", value = " + value);
         }
     };
 

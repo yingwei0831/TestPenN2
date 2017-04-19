@@ -1,4 +1,4 @@
-package com.yingwei.testing.testpenn2.doodle;
+package com.yingwei.testing.testpenn2.doodleback;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -6,7 +6,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Rect;
-import android.nfc.Tag;
 import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -14,13 +13,17 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+
+import com.yingwei.testing.testpenn2.doodle.DoodleChannel;
+import com.yingwei.testing.testpenn2.doodle.Transaction;
+import com.yingwei.testing.testpenn2.doodle.TransactionCenter;
+import com.yingwei.testing.testpenn2.doodle.TransactionManager;
+import com.yingwei.testing.testpenn2.doodle.TransactionObserver;
 import com.yingwei.testing.testpenn2.doodle.action.Action;
 import com.yingwei.testing.testpenn2.doodle.action.MyFillCircle;
 import com.yingwei.testing.testpenn2.doodle.action.MyPath;
 import com.yingwei.testing.testpenn2.trans.DemoCache;
-import com.yingwei.testing.testpenn2.trans.DotManager;
 import com.yingwei.testing.testpenn2.trans.util.log.LogUtil;
-
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,7 +37,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * <p/>
  * Created by huangjun on 2015/6/24.
  */
-public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, TransactionObserver {
+public class DoodleViewBack extends SurfaceView implements SurfaceHolder.Callback, TransactionObserver {
 
     public interface FlipListener {
         void onFlipPage(Transaction transaction);
@@ -56,8 +59,7 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
 
     private Map<String, DoodleChannel> playbackChannelMap = new HashMap<>(); // 其余的人，一个人对应一个通道
 
-//    private TransactionManager transactionManager; // 数据发送管理器
-    private DotManager dotManager; //数据发送管理器
+    private TransactionManager transactionManager; // 数据发送管理器
 
     private int bgColor = Color.WHITE; // 背景颜色 Color.WHITE
     private int paintColor = Color.BLACK; // 默认画笔颜色
@@ -85,17 +87,17 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
 
     private FlipListener flipListener;
 
-    public DoodleView(Context context) {
+    public DoodleViewBack(Context context) {
         super(context);
         init();
     }
 
-    public DoodleView(Context context, AttributeSet attrs, int defStyle) {
+    public DoodleViewBack(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         init();
     }
 
-    public DoodleView(Context context, AttributeSet attrs) {
+    public DoodleViewBack(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
     }
@@ -116,8 +118,7 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
         TransactionCenter.getInstance().setDoodleViewInited(true);
         this.sessionId = sessionId;
         this.flipListener = flipListener;
-//        this.transactionManager = new TransactionManager(sessionId, toAccount, context);
-        this.dotManager = new DotManager(sessionId, toAccount, context);
+        this.transactionManager = new TransactionManager(sessionId, toAccount, context);
 
         if (mode == Mode.PAINT || mode == Mode.BOTH) {
             this.paintChannel = new DoodleChannel();
@@ -126,8 +127,7 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
         }
 
         if (mode == Mode.PLAYBACK || mode == Mode.BOTH) {
-//            this.transactionManager.registerTransactionObserver(this);
-            this.dotManager.registerTransactionObserver(this);
+            this.transactionManager.registerTransactionObserver(this);
         }
 
         this.bgColor = bgColor;
@@ -176,11 +176,8 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
      * 退出涂鸦板时调用
      */
     public void end() {
-//        if (transactionManager != null) {
-//            transactionManager.end();
-//        }
-        if (dotManager != null) {
-            dotManager.end();
+        if (transactionManager != null) {
+            transactionManager.end();
         }
 
         Map<String, Map<String, List<Transaction>>> syncCacheMap
@@ -303,8 +300,7 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
         }
 
         boolean res = back(DemoCache.getAccount(), true);
-//        transactionManager.sendRevokeTransaction();
-        dotManager.sendRevokeTransaction();
+        transactionManager.sendRevokeTransaction();
         return res;
     }
 
@@ -313,16 +309,14 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
      */
     public void clear() {
         clearAll();
-//        transactionManager.sendClearSelfTransaction();
-        dotManager.sendClearSelfTransaction();
+        transactionManager.sendClearSelfTransaction();
     }
 
     /**
      * 发送同步准备指令
      */
     public void sendSyncPrepare() {
-//        transactionManager.sendSyncPrepareTransaction();
-        dotManager.sendSyncPrepareTransaction();
+        transactionManager.sendSyncPrepareTransaction();
     }
 
     /**
@@ -345,7 +339,7 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
         float touchY = event.getRawY();
         Log.e(TAG, "x = " + event.getX() + ", y = " + event.getY());
         Log.e(TAG, "x = " + touchX + ", y = " + touchY);
-        Log.i(TAG, "paintOffsetX = " + paintOffsetX + ", paintOffsetY = " + paintOffsetY);
+        Log.i(TAG, "paintOffsetX=" + paintOffsetX + ", paintOffsetY=" + paintOffsetY);
         touchX -= paintOffsetX;
         touchY -= paintOffsetY;
         Log.i(TAG, "x = " + touchX + ", y = " + touchY);
@@ -373,8 +367,7 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
         }
 
         onActionStart(x, y);
-//        transactionManager.sendStartTransaction(x / xZoom, y / yZoom, paintChannel.paintColor);
-        dotManager.sendStartTransaction(x / xZoom, y / yZoom, paintChannel.paintColor);
+        transactionManager.sendStartTransaction(x / xZoom, y / yZoom, paintChannel.paintColor);
         saveUserData(DemoCache.getAccount(), new Transaction(Transaction.ActionStep.START, x / xZoom, y / yZoom, paintChannel.paintColor), false, false, false);
     }
 
@@ -388,8 +381,7 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
         }
 
         onActionMove(x, y);
-//        transactionManager.sendMoveTransaction(x / xZoom, y / yZoom, paintChannel.paintColor);
-        dotManager.sendMoveTransaction(x / xZoom, y / yZoom, paintChannel.paintColor);
+        transactionManager.sendMoveTransaction(x / xZoom, y / yZoom, paintChannel.paintColor);
         saveUserData(DemoCache.getAccount(), new Transaction(Transaction.ActionStep.MOVE, x / xZoom, y / yZoom, paintChannel.paintColor), false, false, false);
     }
 
@@ -399,8 +391,7 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
         }
 
         onActionEnd();
-//        transactionManager.sendEndTransaction(lastX / xZoom, lastY / yZoom, paintChannel.paintColor);
-        dotManager.sendEndTransaction(lastX / xZoom, lastY / yZoom, paintChannel.paintColor);
+        transactionManager.sendEndTransaction(lastX / xZoom, lastY / yZoom, paintChannel.paintColor);
         saveUserData(DemoCache.getAccount(), new Transaction(Transaction.ActionStep.END, lastX / xZoom, lastY / yZoom, paintChannel.paintColor), false, false, false);
     }
 
@@ -445,16 +436,14 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
                     back(account, false);
                 } else if (t.isClearSelf()) {
                     clearAll();
-//                    transactionManager.sendClearAckTransaction();
-                    dotManager.sendClearAckTransaction();
+                    transactionManager.sendClearAckTransaction();
                 } else if (t.isClearAck()) {
                     clearAll();
                 } else if (t.isSyncRequest()) {
                     sendSyncData(account);
                 } else if (t.isSyncPrepare()) {
                     clearAll();
-//                    transactionManager.sendSyncPrepareAckTransaction();
-                    dotManager.sendSyncPrepareAckTransaction();
+                    transactionManager.sendSyncPrepareAckTransaction();
                 } else if (t.isFlip()) {
                     // 收到翻页消息。先清空白板，然后做翻页操作。
                     LogUtil.i(TAG, "receive flip msg");
@@ -826,8 +815,7 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
     }
 
     public void sendFlipData(String docId, int currentPageNum, int pageCount, int type) {
-//        transactionManager.sendFlipTransaction(docId, currentPageNum, pageCount, type);
-        dotManager.sendFlipTransaction(docId, currentPageNum, pageCount, type);
+        transactionManager.sendFlipTransaction(docId, currentPageNum, pageCount, type);
         saveUserData(DemoCache.getAccount(), new Transaction().makeFlipTranscation(docId, currentPageNum, pageCount, type), false, false, true);
     }
 }

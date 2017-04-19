@@ -3,6 +3,8 @@ package com.yingwei.testing.testpenn2.trans;
 import android.content.Context;
 import android.os.Handler;
 
+import com.yingwei.testing.testpenn2.doodle.Transaction;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,12 +42,32 @@ public class DotManager {
         cache.add(new Dot().makeStartTransaction(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color));
     }
 
+    public void sendStartTransaction(float x, float y, int rgb, int dotType) {
+        cache.add(new Dot().makeStartTransaction(x, y, rgb));
+    }
+
     public void sendMoveTransaction(int sectionId, int ownerId, int noteId, int pageId, int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
         cache.add(new Dot().makeMoveTransaction(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color));
     }
 
     public void sendEndTransaction(int sectionId, int ownerId, int noteId, int pageId, int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
         cache.add(new Dot().makeEndTransaction(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color));
+    }
+
+    public void sendRevokeTransaction() {
+        cache.add(new Dot().makeRevokeTransaction());
+    }
+
+    public void sendSyncPrepareTransaction() {
+        cache.add(new Dot().makeSyncPrepareTransaction());
+    }
+
+    public void sendClearAckTransaction() {
+        cache.add(new Dot().makeClearAckTransaction());
+    }
+
+    public void sendSyncPrepareAckTransaction() {
+        cache.add(new Dot().makeSyncPrepareAckTransaction());
     }
 
     public void sendFlipTransaction(int docId, int currentPageNum, int pageCount, int type) {
