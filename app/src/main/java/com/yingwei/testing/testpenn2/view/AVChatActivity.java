@@ -190,19 +190,19 @@ public class AVChatActivity extends AppCompatActivity implements IPenMsgListener
     private void onPaintActionStart(int sectionId, int ownerId, int noteId, int pageId,
                                     int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
         mSampleView.sendStartTransaction(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
-        mSampleView.saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.START, x, y, fx, fy, pressure, type, timestamp, color), false, false, flip);
+//        mSampleView.saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.START, x, y, fx, fy, pressure, type, timestamp, color), false, false, flip);
     }
 
     private void onPaintActionMove(int sectionId, int ownerId, int noteId, int pageId,
                                    int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
         mSampleView.sendMoveTransaction(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
-        mSampleView.saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.MOVE, x, y, fx, fy, pressure, type, timestamp, color), false, false, flip);
+//        mSampleView.saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.MOVE, x, y, fx, fy, pressure, type, timestamp, color), false, false, flip);
     }
 
     private void onPaintActionEnd(int sectionId, int ownerId, int noteId, int pageId,
                                   int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
         mSampleView.sendEndTransaction(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
-        mSampleView.saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.END, x, y, fx, fy, pressure, type, timestamp, color), false, false, flip);
+//        mSampleView.saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.END, x, y, fx, fy, pressure, type, timestamp, color), false, false, flip);
     }
 
     @Override

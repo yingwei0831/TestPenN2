@@ -1,0 +1,8 @@
+1:0.59,0.56,0,0,0,-16777216,89999;3:0.59,0.56,0,0,0,-16777216,89999;5:1,0;
+
+PC端开发手册：http://dev.netease.im/docs?doc=pc&#C++ SDK开发手册
+PC端配置详情：http://bbs.netease.im/read-tid-642
+Serve开发手册：http://dev.netease.im/docs?doc=server
+Android开发手册：http://dev.netease.im/docs?doc=android&#实时会话配置
+SDK说明文档：http://dev.netease.im/doc/android/index.html
+数据解析、处理详见PC端开发手册；

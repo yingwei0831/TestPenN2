@@ -6,7 +6,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Rect;
-import android.nfc.Tag;
+import android.graphics.Typeface;
 import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -18,7 +18,10 @@ import com.yingwei.testing.testpenn2.doodle.action.Action;
 import com.yingwei.testing.testpenn2.doodle.action.MyFillCircle;
 import com.yingwei.testing.testpenn2.doodle.action.MyPath;
 import com.yingwei.testing.testpenn2.trans.DemoCache;
+import com.yingwei.testing.testpenn2.trans.Dot;
+import com.yingwei.testing.testpenn2.trans.DotCenter;
 import com.yingwei.testing.testpenn2.trans.DotManager;
+import com.yingwei.testing.testpenn2.trans.DotObserver;
 import com.yingwei.testing.testpenn2.trans.util.log.LogUtil;
 
 
@@ -34,10 +37,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * <p/>
  * Created by huangjun on 2015/6/24.
  */
-public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, TransactionObserver {
+public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, DotObserver {
 
     public interface FlipListener {
-        void onFlipPage(Transaction transaction);
+        void onFlipPage(Dot transaction);
     }
 
     public enum Mode {
@@ -81,9 +84,12 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
     private int paintType;
 
     // <account, transactions>
-    private Map<String, List<Transaction>> userDataMap = new HashMap<>();
+    private Map<String, List<Dot>> userDataMap = new HashMap<>();
 
     private FlipListener flipListener;
+
+    //为了区分笔迹与手迹，添加手迹type类型
+    private final int typeDiffer = 89999;
 
     public DoodleView(Context context) {
         super(context);
@@ -146,12 +152,13 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
                 }
                 drawHistoryActions(canvas);
                 surfaceHolder.unlockCanvasAndPost(canvas);
-                Map<String, List<Transaction>> map = TransactionCenter.getInstance().getSyncDataMap(sessionId);
+//                Map<String, List<Transaction>> map = TransactionCenter.getInstance().getSyncDataMap(sessionId);
+                Map<String, List<Dot>> map = DotCenter.getInstance().getSyncDataMap(sessionId);
                 if (map != null && !isSyncAlready) {
                     isSyncAlready = true;
-                    Map<String, List<Transaction>> tempMap = new HashMap<>();
+                    Map<String, List<Dot>> tempMap = new HashMap<>();
                     tempMap.putAll(map);
-                    for (Map.Entry<String, List<Transaction>> entry : tempMap.entrySet()) {
+                    for (Map.Entry<String, List<Dot>> entry : tempMap.entrySet()) {
                         if (entry.getKey().equals(DemoCache.getAccount())) {
                             // 异常退出的情况，里面可能有我自己画的数据
                             onSyncMyTransactionsDraw(entry.getValue());
@@ -374,8 +381,8 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
 
         onActionStart(x, y);
 //        transactionManager.sendStartTransaction(x / xZoom, y / yZoom, paintChannel.paintColor);
-        dotManager.sendStartTransaction(x / xZoom, y / yZoom, paintChannel.paintColor);
-        saveUserData(DemoCache.getAccount(), new Transaction(Transaction.ActionStep.START, x / xZoom, y / yZoom, paintChannel.paintColor), false, false, false);
+        dotManager.sendStartTransaction(x / xZoom, y / yZoom, paintChannel.paintColor, typeDiffer);
+        saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.START, x / xZoom, y / yZoom, paintChannel.paintColor, typeDiffer), false, false, false);
     }
 
     private void onPaintActionMove(float x, float y) {
@@ -389,8 +396,8 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
 
         onActionMove(x, y);
 //        transactionManager.sendMoveTransaction(x / xZoom, y / yZoom, paintChannel.paintColor);
-        dotManager.sendMoveTransaction(x / xZoom, y / yZoom, paintChannel.paintColor);
-        saveUserData(DemoCache.getAccount(), new Transaction(Transaction.ActionStep.MOVE, x / xZoom, y / yZoom, paintChannel.paintColor), false, false, false);
+        dotManager.sendMoveTransaction(x / xZoom, y / yZoom, paintChannel.paintColor, typeDiffer);
+        saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.MOVE, x / xZoom, y / yZoom, paintChannel.paintColor, typeDiffer), false, false, false);
     }
 
     private void onPaintActionEnd(float x, float y) {
@@ -400,8 +407,8 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
 
         onActionEnd();
 //        transactionManager.sendEndTransaction(lastX / xZoom, lastY / yZoom, paintChannel.paintColor);
-        dotManager.sendEndTransaction(lastX / xZoom, lastY / yZoom, paintChannel.paintColor);
-        saveUserData(DemoCache.getAccount(), new Transaction(Transaction.ActionStep.END, lastX / xZoom, lastY / yZoom, paintChannel.paintColor), false, false, false);
+        dotManager.sendEndTransaction(lastX / xZoom, lastY / yZoom, paintChannel.paintColor, typeDiffer);
+        saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.END, lastX / xZoom, lastY / yZoom, paintChannel.paintColor, typeDiffer), false, false, false);
     }
 
 
@@ -410,7 +417,8 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
      */
 
     @Override
-    public void onTransaction(String account, final List<Transaction> transactions) {
+    public void onTransaction(String account, final List<Dot> transactions) {
+
         if (transactions.size() > 0 && transactions.get(0).isSync()
                 && transactions.get(0).getUid().equals(DemoCache.getAccount())) {
             // 断网重连，主播同步数据，收到自己的数据
@@ -430,35 +438,37 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
 
         DoodleChannel playbackChannel = initPlaybackChannel(account);
 
-        List<Transaction> cache = new ArrayList<>(transactions.size());
-        for (Transaction t : transactions) {
+        List<Dot> cache = new ArrayList<>(transactions.size());
+        for (Dot t : transactions) {
             if (t == null) {
                 continue;
             }
-            if (t.isPaint()) {
-                // 正常画笔
-                cache.add(t);
-            } else {
-                onMultiTransactionsDraw(playbackChannel, account, cache);
-                cache.clear();
-                if (t.isRevoke()) {
-                    back(account, false);
-                } else if (t.isClearSelf()) {
-                    clearAll();
+            if (t.getTypeDiffer() == typeDiffer) {
+                if (t.isPaint()) {
+                    // 正常画笔
+                    cache.add(t);
+                } else {
+                    onMultiTransactionsDraw(playbackChannel, account, cache);
+                    cache.clear();
+                    if (t.isRevoke()) {
+                        back(account, false);
+                    } else if (t.isClearSelf()) {
+                        clearAll();
 //                    transactionManager.sendClearAckTransaction();
-                    dotManager.sendClearAckTransaction();
-                } else if (t.isClearAck()) {
-                    clearAll();
-                } else if (t.isSyncRequest()) {
-                    sendSyncData(account);
-                } else if (t.isSyncPrepare()) {
-                    clearAll();
+                        dotManager.sendClearAckTransaction();
+                    } else if (t.isClearAck()) {
+                        clearAll();
+                    } else if (t.isSyncRequest()) {
+                        sendSyncData(account);
+                    } else if (t.isSyncPrepare()) {
+                        clearAll();
 //                    transactionManager.sendSyncPrepareAckTransaction();
-                    dotManager.sendSyncPrepareAckTransaction();
-                } else if (t.isFlip()) {
-                    // 收到翻页消息。先清空白板，然后做翻页操作。
-                    LogUtil.i(TAG, "receive flip msg");
-                    flipListener.onFlipPage(t);
+                        dotManager.sendSyncPrepareAckTransaction();
+                    } else if (t.isFlip()) {
+                        // 收到翻页消息。先清空白板，然后做翻页操作。
+                        LogUtil.i(TAG, "receive flip msg");
+                        flipListener.onFlipPage(t);
+                    }
                 }
             }
         }
@@ -546,92 +556,100 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
         channel.action = null;
     }
 
-    private void onSyncMyTransactionsDraw(List<Transaction> transactions) {
+    private void onSyncMyTransactionsDraw(List<Dot> transactions) {
         int tempColor = paintChannel.paintColor;
-        for (Transaction t : transactions) {
-            switch (t.getStep()) {
-                case Transaction.ActionStep.START:
-                    paintChannel.paintColor = convertRGBToARGB(t.getRgb());
-                    onActionStart(t.getX() * xZoom, t.getY() * yZoom);
-                    break;
-                case Transaction.ActionStep.MOVE:
-                    onActionMove(t.getX() * xZoom, t.getY() * yZoom);
-                    break;
-                case Transaction.ActionStep.END:
-                    onActionEnd();
-                    break;
-                default:
-                    break;
+        for (Dot t : transactions) {
+            if (t.getTypeDiffer() == typeDiffer) {
+                switch (t.getStep()) {
+                    case Transaction.ActionStep.START:
+//                        paintChannel.paintColor = convertRGBToARGB(t.getRgb());
+                        paintChannel.paintColor = convertRGBToARGB(t.getColor());
+                        onActionStart(t.getX() * xZoom, t.getY() * yZoom);
+                        break;
+                    case Transaction.ActionStep.MOVE:
+                        onActionMove(t.getX() * xZoom, t.getY() * yZoom);
+                        break;
+                    case Transaction.ActionStep.END:
+                        onActionEnd();
+                        break;
+                    default:
+                        break;
+                }
             }
         }
         paintChannel.paintColor = tempColor;
     }
 
-    private void onMultiTransactionsDraw(DoodleChannel playbackChannel, String account, List<Transaction> transactions) {
+    private void onMultiTransactionsDraw(DoodleChannel playbackChannel, String account, List<Dot> transactions) {
         if (transactions == null || transactions.size() == 0 || playbackChannel == null) {
             return;
         }
         Canvas canvas = surfaceHolder.lockCanvas();
-        for (Transaction t : transactions) {
-            switch (t.getStep()) {
-                case Transaction.ActionStep.LASER_PEN:
-                    // 绘制背景
-                    canvas.drawColor(bgColor);
-                    laserChannel.action = null;
-                    laserChannel.action = new MyFillCircle(t.getX() * xZoom, t.getY() * yZoom, Color.RED,
-                            laserChannel.paintSize, 10);
-                    laserChannel.action.onDraw(canvas);
-                    break;
-                case Transaction.ActionStep.LASER_PEN_END:
-                    laserChannel.action = null;
-                    break;
+        for (Dot t : transactions) {
+            if (t.getTypeDiffer() == typeDiffer) {
+                switch (t.getStep()) {
+                    case Transaction.ActionStep.LASER_PEN:
+                        // 绘制背景
+                        canvas.drawColor(bgColor);
+                        laserChannel.action = null;
+                        laserChannel.action = new MyFillCircle(t.getX() * xZoom, t.getY() * yZoom, Color.RED,
+                                laserChannel.paintSize, 10);
+                        laserChannel.action.onDraw(canvas);
+                        break;
+                    case Transaction.ActionStep.LASER_PEN_END:
+                        laserChannel.action = null;
+                        break;
+                }
             }
         }
 
         drawHistoryActions(canvas);
         // 绘制新的数据
-        for (Transaction t : transactions) {
-            switch (t.getStep()) {
-                case Transaction.ActionStep.START:
-                    if (playbackChannel.action != null) {
-                        // 如果没有收到end包，在这里补提交
-                        playbackChannel.actions.add(playbackChannel.action);
-                    }
+        for (Dot t : transactions) {
+            if (t.getTypeDiffer() == typeDiffer) {
+                switch (t.getStep()) {
+                    case Transaction.ActionStep.START:
+                        if (playbackChannel.action != null) {
+                            // 如果没有收到end包，在这里补提交
+                            playbackChannel.actions.add(playbackChannel.action);
+                        }
 
-                    saveUserData(account, t, false, false, false);
-                    setPlaybackColor(playbackChannel, t.getRgb());
+                        saveUserData(account, t, false, false, false);
+//                        setPlaybackColor(playbackChannel, t.getRgb());
+                        setPlaybackColor(playbackChannel, t.getColor());
 
-                    playbackChannel.action = new MyPath(t.getX() * xZoom, t.getY() * yZoom, playbackChannel
-                            .paintColor, playbackChannel.paintSize);
-                    playbackChannel.action.onStart(canvas);
-                    playbackChannel.action.onDraw(canvas);
-                    break;
-                case Transaction.ActionStep.MOVE:
-                    saveUserData(account, t, false, false, false);
-                    if (playbackChannel.action != null) {
-                        playbackChannel.action.onMove(t.getX() * xZoom, t.getY() * yZoom);
+                        playbackChannel.action = new MyPath(t.getX() * xZoom, t.getY() * yZoom, playbackChannel
+                                .paintColor, playbackChannel.paintSize);
+                        playbackChannel.action.onStart(canvas);
                         playbackChannel.action.onDraw(canvas);
-                    }
-                    break;
-                case Transaction.ActionStep.END:
-                    if (playbackChannel.action != null) {
+                        break;
+                    case Transaction.ActionStep.MOVE:
+                        saveUserData(account, t, false, false, false);
+                        if (playbackChannel.action != null) {
+                            playbackChannel.action.onMove(t.getX() * xZoom, t.getY() * yZoom);
+                            playbackChannel.action.onDraw(canvas);
+                        }
+                        break;
+                    case Transaction.ActionStep.END:
+                        if (playbackChannel.action != null) {
 
-                        playbackChannel.actions.add(playbackChannel.action);
-                        playbackChannel.action = null;
-                    }
-                    saveUserData(account, t, false, false, false);
-                    break;
-                default:
-                    break;
+                            playbackChannel.actions.add(playbackChannel.action);
+                            playbackChannel.action = null;
+                        }
+                        saveUserData(account, t, false, false, false);
+                        break;
+                    default:
+                        break;
+                }
             }
-        }
-        if (canvas != null) {
-            surfaceHolder.unlockCanvasAndPost(canvas);
+            if (canvas != null) {
+                surfaceHolder.unlockCanvasAndPost(canvas);
+            }
         }
     }
 
-    private void saveUserData(String account, Transaction t, boolean isBack, boolean isClear, boolean isFlip) {
-        List<Transaction> list = userDataMap.get(account);
+    private void saveUserData(String account, Dot t, boolean isBack, boolean isClear, boolean isFlip) {
+        List<Dot> list = userDataMap.get(account);
         if (isBack) {
             while (list != null && list.size() > 0 && list.get(list.size() - 1).getStep() != Transaction.ActionStep.START) {
                 list.remove(list.size() - 1);
@@ -647,7 +665,7 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
                 list = new ArrayList<>();
                 list.add(t);
             } else {
-                for (Transaction transaction : list) {
+                for (Dot transaction : list) {
                     if (transaction.getStep() == Transaction.ActionStep.Flip) {
                         list.remove(transaction);
                         break;
@@ -801,7 +819,8 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
 
     public void sendSyncData(String account) {
         for (String key : userDataMap.keySet()) {
-            transactionManager.sendSyncTransaction(account, key, 1, userDataMap.get(key));
+//            transactionManager.sendSyncTransaction(account, key, 1, userDataMap.get(key));
+            dotManager.sendSyncTransaction(account, key, 1, userDataMap.get(key), typeDiffer);
         }
     }
 
@@ -827,7 +846,7 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, T
 
     public void sendFlipData(String docId, int currentPageNum, int pageCount, int type) {
 //        transactionManager.sendFlipTransaction(docId, currentPageNum, pageCount, type);
-        dotManager.sendFlipTransaction(docId, currentPageNum, pageCount, type);
-        saveUserData(DemoCache.getAccount(), new Transaction().makeFlipTranscation(docId, currentPageNum, pageCount, type), false, false, true);
+        dotManager.sendFlipTranscation(docId, currentPageNum, pageCount, type, typeDiffer);
+        saveUserData(DemoCache.getAccount(), new Dot().makeFlipTransaction(docId, currentPageNum, pageCount, type, typeDiffer), false, false, true);
     }
 }

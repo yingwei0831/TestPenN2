@@ -103,7 +103,7 @@ public class SampleView extends SurfaceView implements SurfaceHolder.Callback, D
     }
 
     public void sendFlipData(int docId, int currentPageNum, int pageCount, int type) {
-        transactionManager.sendFlipTransaction(docId, currentPageNum, pageCount, type);
+        transactionManager.sendFlipTranscation(docId, currentPageNum, pageCount, type);
         saveUserData(DemoCache.getAccount(),
                 new com.yingwei.testing.testpenn2.trans.Dot().makeFlipTranscation(docId, currentPageNum, pageCount, type),
                 false, false, true);
