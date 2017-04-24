@@ -1,8 +1,11 @@
-package com.yingwei.testing.testpenn2.trans;
+package com.yingwei.testing.testpenn2.doodleback;
 
 import android.content.Context;
 import android.os.Handler;
-import android.util.Log;
+
+import com.yingwei.testing.testpenn2.trans.Dot;
+import com.yingwei.testing.testpenn2.trans.DotCenter;
+import com.yingwei.testing.testpenn2.trans.DotObserver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,9 +13,9 @@ import java.util.List;
 /**
  * Created by jiahe008_lvlanlan on 2017/3/28.
  */
-public class DotManager {
+public class DotManagerBack {
 
-    private final int TIMER_TASK_PERIOD = 60;
+    private final int TIMER_TASK_PERIOD = 30;
 
     private String sessionId;
 
@@ -22,7 +25,7 @@ public class DotManager {
 
     private List<Dot> cache = new ArrayList<>(1000);
 
-    public DotManager(String sessionId, String toAccount, Context context) {
+    public DotManagerBack(String sessionId, String toAccount, Context context) {
         this.sessionId = sessionId;
         this.toAccount = toAccount;
         this.handler = new Handler(context.getMainLooper());
@@ -108,11 +111,9 @@ public class DotManager {
     private Runnable timerTask = new Runnable() {
         @Override
         public void run() {
-
             handler.removeCallbacks(timerTask);
             {
-//                Log.e("size", "cache; " + cache.size());
-                if (0 < cache.size()) {
+                if (cache.size() > 0) {
                     sendCacheTransaction();
                 }
             }

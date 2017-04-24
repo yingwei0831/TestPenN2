@@ -6,12 +6,12 @@
     tools:context=".view.TestConnectActivity"
     >
 
-    <!--<com.yingwei.testing.testpenn2.SampleView-->
-        <!--android:id="@+id/sample_view_dot"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="match_parent"-->
-        <!--android:visibility="visible"-->
-        <!--/>-->
+    <com.yingwei.testing.testpenn2.SampleView
+        android:id="@+id/sample_view_dot"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="visible"
+        />
 
     <com.yingwei.testing.testpenn2.doodle.DoodleView
         android:id="@+id/doodle_view_transaction"

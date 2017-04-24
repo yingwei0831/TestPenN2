@@ -1,16 +1,14 @@
-package com.yingwei.testing.testpenn2.trans;
+package com.yingwei.testing.testpenn2.doodleback;
 
 import android.util.Log;
 
 import java.util.Locale;
 
-//import com.yingwei.testing.testpenn2.trans.util.log.LogUtil;
-
 /**
- * Created by jiahe008_lvlanlan on 2017/3/29.
+ * Created by birney1 on 2017/4/23.
  */
-public class Dot {
 
+public class DotBack {
     private static final int TOTAL_PAGE = 64;
 
     public float x;
@@ -19,7 +17,7 @@ public class Dot {
     public int pressure;
     public long timestamp;
 
-    public Dot(float x, float y, int pressure, int dotType, long timestamp) {
+    public DotBack(float x, float y, int pressure, int dotType, long timestamp) {
         this.x = x;
         this.y = y;
         this.pressure = pressure;
@@ -27,7 +25,7 @@ public class Dot {
         this.timestamp = timestamp;
     }
 
-    public Dot(int x, int y, int fx, int fy, int pressure, int dotType, long timestamp) {
+    public DotBack(int x, int y, int fx, int fy, int pressure, int dotType, long timestamp) {
         this((float)x + (float)((double)fx * 0.01D), (float)y + (float)((double)fy * 0.01D), pressure, dotType, timestamp);
     }
 
@@ -82,27 +80,22 @@ public class Dot {
 
     // 封装transaction中的uid，是画笔数据的owner ? account?
     private String uid;
-    private int end; //什么结束了？
+    private int end;
 
-    //为了添加手迹，添加参数
-    private int typeDiffer;
-    private String docId; //具体是什么id不清楚，可能是分享用的docId
-
-    public Dot() {
+    public DotBack() {
     }
 
-    public Dot(byte step) {
+    public DotBack(byte step) {
         this.step = step;
     }
 
-    public Dot(byte step, String uid, int end, int typeDiffer) {
+    public DotBack(byte step, String uid, int end) {
         this.step = step;
         this.uid = uid;
         this.end = end;
-        this.typeDiffer = typeDiffer;
     }
 
-    public Dot(byte step, int docId, int currentPageNum, int countTotal, int type) {//step, docId, currentPageNum, countTotal, type
+    public DotBack(byte step, int docId, int currentPageNum, int countTotal, int type) {//step, docId, currentPageNum, countTotal, type
         this.step = step;
         this.noteId = docId;
         this.pageId = currentPageNum;
@@ -110,77 +103,45 @@ public class Dot {
         this.type = type;
     }
 
-    public Dot(byte step, int docId, int currentPageNum, int countTotal, int type, int typeDiffer) {//step, docId, currentPageNum, countTotal, type
-        this.step = step;
-        this.noteId = docId;
-        this.pageId = currentPageNum;
-        this.countTotal = countTotal;
-        this.type = type;
-        this.typeDiffer = typeDiffer;
-    }
-
-    public Dot(byte step, String docId, int currentPageNum, int countTotal, int type, int typeDiffer) {//step, docId, currentPageNum, countTotal, type
-        this.step = step;
-        this.docId = docId;
-        this.pageId = currentPageNum;
-        this.countTotal = countTotal;
-        this.type = type;
-        this.typeDiffer = typeDiffer;
-    }
-
-
-    public Dot(byte step, float x, float y, int pressure, int dotType, long timestamp) {
+    public DotBack(byte step, float x, float y, int pressure, int dotType, long timestamp) {
         this(x, y, pressure, dotType, timestamp);
         this.step = step;
     }
 
-
-    public Dot(byte step, int x, int y, int fx, int fy, int pressure, int dotType, long timestamp) {
+    public DotBack(byte step, int x, int y, int fx, int fy, int pressure, int dotType, long timestamp) {
         this(x, y, fx, fy, pressure, dotType, timestamp);
         this.step = step;
     }
 
-    public Dot(byte step, int x, int y, int fx, int fy, int pressure, int dotType, long timestamp, int color, int typeDiffer) {
+    public DotBack(byte step, int x, int y, int fx, int fy, int pressure, int dotType, long timestamp, int color) {
         this(x, y, fx, fy, pressure, dotType, timestamp);
         this.color = color;
         this.step = step;
-        this.typeDiffer = typeDiffer;
-    }
-
-    /**
-     * 手迹
-     */
-    public Dot(byte step, float x, float y, int rgb, int typeDiffer){
-        this.step = step;
-        this.x = x;
-        this.y = y;
-        this.color = rgb;
-        this.typeDiffer = typeDiffer;
     }
 
     public static String packIndex(int index) {
         return String.format(Locale.getDefault(), "5:%d,0;", index);
     }
 
-    public static String pack(Dot t) {
+    public static String pack(DotBack t) {
         Log.e(TAG, "pack step = " + t.getStep()); //123
         if (t.getStep() == ActionStep.SYNC) {
-            return String.format(Locale.getDefault(), "%d:%s,%d,%d;", t.getStep(), t.getUid(), t.getEnd(), t.getTypeDiffer());
+            return String.format(Locale.getDefault(), "%d:%s,%d;", t.getStep(), t.getUid(), t.getEnd());
         } else if (t.getStep() == ActionStep.CLEAR || t.getStep() == ActionStep.REVOKE
                 || t.getStep() == ActionStep.CLEAR_ACK || t.getStep() == ActionStep.SYNC_REQUEST
                 || t.getStep() == ActionStep.SERIAL
                 || t.getStep() == ActionStep.SYNC_PREPARE || t.getStep() == ActionStep.SYNC_PREPARE_ACK) {
-            return String.format(Locale.getDefault(), "%d:%d;", t.getStep(), t.getTypeDiffer());
+            return String.format(Locale.getDefault(), "%d:;", t.getStep());
         } else if (t.getStep() == ActionStep.Flip) { //翻页
-            return String.format(Locale.getDefault(), "%d:%d,%d,%d,%d,%d;",
-                    t.getStep(), t.getNoteId(), t.getPageId(), TOTAL_PAGE, t.getType(), t.getTypeDiffer());
+            return String.format(Locale.getDefault(), "%d:%d,%d,%d,%d;",
+                    t.getStep(), t.getNoteId(), t.getPageId(), TOTAL_PAGE, t.getType());
         }
 //        return String.format(Locale.getDefault(), "%d:%f,%f,%d;", t.getStep(), t.getX(), t.getY(), t.getColor());
-        return String.format(Locale.getDefault(), "%d:%.2f,%.2f,%d,%d,%d,%d,%d;",
-                t.getStep(), t.getX(), t.getY(), t.getPressure(), t.getType(), t.getTimestamp(), t.getColor(), t.getTypeDiffer());
+        return String.format(Locale.getDefault(), "%d:%.2f,%.2f,%d,%d,%d,%d;",
+                t.getStep(), t.getX(), t.getY(), t.getPressure(), t.getType(), t.getTimestamp(), t.getColor());
     }
 
-    public static Dot unpack(String data) {
+    public static DotBack unpack(String data) {
         Log.e(TAG, "unpack data = " + data);
         int sp1 = data.indexOf(":");
         byte step;
@@ -199,18 +160,13 @@ public class Dot {
                     return null;
                 }
                 String[] dotData = data.substring(sp1+1).split(",");
-                if (Integer.parseInt(dotData[6]) != 89999){
-                    return new Dot(step,
-                            Float.valueOf(dotData[0]).intValue(), Float.valueOf(dotData[1]).intValue(),
-                            Float.valueOf(Float.valueOf(dotData[0]) * 100 % 100).intValue(), Float.valueOf(Float.valueOf(dotData[1]) * 100 % 100).intValue(),
-                            Integer.parseInt(dotData[2]), Integer.parseInt(dotData[3]), Long.parseLong(dotData[4]), Integer.parseInt(dotData[5]),
-                            Integer.parseInt(dotData[6]));
-                }else{
-                    return new Dot(step,
-                            Float.valueOf(dotData[0]), Float.valueOf(dotData[1]),
-                            Integer.parseInt(dotData[5]), Integer.parseInt(dotData[6])
-                            );
-                }
+                return new DotBack(step,
+                        Float.valueOf(dotData[0]).intValue(), Float.valueOf(dotData[1]).intValue(),
+                        Float.valueOf(Float.valueOf(dotData[0]) * 100 % 100).intValue(), Float.valueOf(Float.valueOf(dotData[1]) * 100 % 100).intValue(),
+                        Integer.parseInt(dotData[2]),
+                        Integer.parseInt(dotData[3]),
+                        Long.parseLong(dotData[4]),
+                        Integer.parseInt(dotData[5]));
             } else if (step == ActionStep.SYNC) {
                 // 同步
                 int sp2 = data.indexOf(",");
@@ -220,7 +176,7 @@ public class Dot {
                 String uid = data.substring(sp1 + 1, sp2);
                 int end = Integer.parseInt(data.substring(sp2 + 1));
                 Log.i(TAG, "Syncing，recive sync data, account:" + uid + ", end:" + end);
-                return new Dot(step, uid, end, Integer.parseInt(data.substring(data.lastIndexOf(","), data.length())));
+                return new DotBack(step, uid, end);
             } else if (step == 5) {
                 // 包序号
                 String id = data.substring(sp1 + 1);
@@ -238,19 +194,12 @@ public class Dot {
                 String[] dotData = data.substring(sp1+1).split(",");
 //                t.getStep(), t.getNoteId(), t.getPageId(), TOTAL_PAGE, t.getType()
                 //step, docId, currentPageNum, countTotal, type
-                if (Integer.parseInt(dotData[4]) == 89999){
-                    return new Dot(step,
-                            dotData[0], Integer.parseInt(dotData[1]), Integer.parseInt(dotData[2]), Integer.parseInt(dotData[3]),
-                            Integer.parseInt(dotData[4]));
-                }else {
-                    return new Dot(step,
-                            Integer.parseInt(dotData[0]), Integer.parseInt(dotData[1]), Integer.parseInt(dotData[2]), Integer.parseInt(dotData[3]),
-                            Integer.parseInt(dotData[4]));
-                }
+                return new DotBack(step,
+                        Integer.parseInt(dotData[0]), Integer.parseInt(dotData[1]), Integer.parseInt(dotData[2]), Integer.parseInt(dotData[3]));
             } else {
                 Log.i(TAG, "recieve step:" + step);
                 // 其他控制指令
-                return new Dot(step);
+                return new DotBack(step);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -258,80 +207,45 @@ public class Dot {
         return null;
     }
 
-    public Dot makeStartTransaction(int sectionId, int ownerId, int noteId, int pageId, int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
+    public DotBack makeStartTransaction(int sectionId, int ownerId, int noteId, int pageId, int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
         make(ActionStep.START, sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
         return this;
     }
 
-    /**
-     * 手迹
-     */
-    public Dot makeStartTransaction(float x, float y, int rgb, int typeDiffer) {
-        make(ActionStep.START, x, y, rgb, typeDiffer);
-        return this;
-    }
-
-    public Dot makeMoveTransaction(int sectionId, int ownerId, int noteId, int pageId, int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
+    public DotBack makeMoveTransaction(int sectionId, int ownerId, int noteId, int pageId, int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
         make(ActionStep.MOVE, sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
         return this;
     }
 
-    public Dot makeFlipTranscation(int docId, int currentPageNum, int pageCount, int type) {
-        make(ActionStep.Flip, docId, currentPageNum, pageCount, type);
-        return this;
-    }
-
-    /**
-     * 手迹
-     */
-    public Dot makeMoveTransaction(float x, float y, int rgb, int typeDiffer) {
-        make(ActionStep.MOVE, x, y, rgb, typeDiffer);
-        return this;
-    }
-
-    public Dot makeEndTransaction(int sectionId, int ownerId, int noteId, int pageId, int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
+    public DotBack makeEndTransaction(int sectionId, int ownerId, int noteId, int pageId, int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
         make(ActionStep.END, sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
         return this;
     }
 
-    /**
-     * 手迹
-     */
-    public Dot makeEndTransaction(float x, float y, int rgb, int typeDiffer) {
-        make(ActionStep.END, x, y, rgb, typeDiffer);
-        return this;
-    }
-
-    public Dot makeFlipTransaction(String docId, int currentPageNum, int pageCount, int type, int typeDiffer) {
-        make(ActionStep.Flip, docId, currentPageNum, pageCount, type, typeDiffer);
-        return this;
-    }
-
-    public Dot makeSyncTransaction(String uid, int end, int typeDiffer) {
-        make(ActionStep.SYNC, uid, end, typeDiffer);
-        return this;
-    }
-
-    public Dot makeRevokeTransaction() {
+    public DotBack makeRevokeTransaction() {
         make(ActionStep.REVOKE);
         return this;
     }
 
-    public Dot makeSyncPrepareTransaction() {
+    public DotBack makeSyncPrepareTransaction() {
         make(ActionStep.SYNC_PREPARE);
         return this;
     }
 
-    public Dot makeClearAckTransaction() {
+    public DotBack makeClearAckTransaction() {
         make(ActionStep.CLEAR_ACK);
         return this;
     }
 
-    public Dot makeSyncPrepareAckTransaction() {
+    public DotBack makeSyncPrepareAckTransaction() {
         make(ActionStep.SYNC_PREPARE_ACK);
         return this;
     }
 
+    public DotBack makeFlipTranscation(int docId, int currentPageNum, int pageCount, int type) {
+        make(ActionStep.Flip, docId, currentPageNum, pageCount, type);
+        return this;
+    }
     /**
      * 翻页
      *
@@ -349,37 +263,6 @@ public class Dot {
         this.type = type;
     }
 
-    private void make(byte step, String docId, int currentPageNum, int pageCount, int type, int typeDiffer) {
-        this.step = step;
-        this.docId = docId;
-        this.pageId = currentPageNum;
-        this.countTotal = pageCount;
-        this.type = type;
-        this.typeDiffer = typeDiffer;
-    }
-
-
-    /**
-     * 手迹
-     */
-    private void make(byte step, float x, float y, int rgb, int typeDiffer) {
-        this.step = step;
-        this.x = x;
-        this.y = y;
-        this.color = rgb;
-        this.typeDiffer = typeDiffer;
-    }
-
-    /**
-     * 手迹
-     */
-    private void make(byte step, String uid, int end, int typeDiffer){
-        this.step = step;
-        this.uid = uid;
-        this.end = end;
-        this.typeDiffer = typeDiffer;
-    }
-
     private void make(byte step, int sectionId, int ownerId, int noteId, int pageId, int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
         this.step = step;
         this.x = (float)x + (float)((double)fx * 0.01D);
@@ -395,13 +278,17 @@ public class Dot {
         this.color = color;
     }
 
-    public Dot makeClearSelfTransaction() {
+    public DotBack makeClearSelfTransaction() {
         make(ActionStep.CLEAR);
         return this;
     }
 
     private void make(byte step) {
         this.step = step;
+    }
+
+    public boolean isSync() {
+        return step == ActionStep.SYNC;
     }
 
     public String getUid() {
@@ -473,50 +360,5 @@ public class Dot {
 
     public void setType(int type) {
         this.type = type;
-    }
-
-    public int getTypeDiffer() {
-        return typeDiffer;
-    }
-
-    public void setTypeDiffer(int typeDiffer) {
-        this.typeDiffer = typeDiffer;
-    }
-
-    public boolean isRevoke() {
-        return step == ActionStep.REVOKE;
-    }
-    public boolean isClearSelf() {
-        return step == ActionStep.CLEAR;
-    }
-
-    public boolean isClearAck() {
-        return step == ActionStep.CLEAR_ACK;
-    }
-
-    public boolean isSyncRequest() {
-        return step == ActionStep.SYNC_REQUEST;
-    }
-
-    public boolean isSync() {
-        return step == ActionStep.SYNC;
-    }
-
-    public boolean isSyncPrepare() {
-        return step == ActionStep.SYNC_PREPARE;
-    }
-
-    public boolean isSyncPrepareAck() {
-        return step == ActionStep.SYNC_PREPARE_ACK;
-    }
-
-    public boolean isFlip() {
-        return step == ActionStep.Flip;
-    }
-
-    public boolean isPaint() {
-        return !isRevoke() && !isClearSelf() && !isClearAck()
-                && !isSyncRequest() && !isSyncPrepare() && !isSyncPrepareAck()
-                && !isFlip();
     }
 }

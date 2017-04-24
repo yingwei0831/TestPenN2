@@ -2,7 +2,6 @@ package com.yingwei.testing.testpenn2.view;
 
 import android.app.Activity;
 import android.app.Dialog;
-import android.app.DownloadManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -16,7 +15,6 @@ import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.media.AudioManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -47,11 +45,6 @@ import com.netease.nimlib.sdk.avchat.model.AVChatOptionalConfig;
 import com.netease.nimlib.sdk.avchat.model.AVChatVideoFrame;
 import com.netease.nimlib.sdk.media.player.AudioPlayer;
 import com.netease.nimlib.sdk.media.player.OnPlayListener;
-import com.netease.nimlib.sdk.msg.MessageBuilder;
-import com.netease.nimlib.sdk.msg.MsgService;
-import com.netease.nimlib.sdk.msg.constant.MsgTypeEnum;
-import com.netease.nimlib.sdk.msg.constant.SessionTypeEnum;
-import com.netease.nimlib.sdk.msg.model.IMMessage;
 import com.netease.nimlib.sdk.rts.RTSCallback;
 import com.netease.nimlib.sdk.rts.RTSChannelStateObserver;
 import com.netease.nimlib.sdk.rts.RTSManager;
@@ -72,7 +65,6 @@ import com.yingwei.testing.testpenn2.Util;
 import com.yingwei.testing.testpenn2.doodle.ActionTypeEnum;
 import com.yingwei.testing.testpenn2.doodle.DoodleView;
 import com.yingwei.testing.testpenn2.doodle.SupportActionType;
-import com.yingwei.testing.testpenn2.doodle.Transaction;
 import com.yingwei.testing.testpenn2.doodle.action.MyPath;
 import com.yingwei.testing.testpenn2.im.business.LogoutHelper;
 import com.yingwei.testing.testpenn2.im.confit.AuthPreferences;
@@ -85,12 +77,9 @@ import com.yingwei.testing.testpenn2.retrofitutil.RetrofitWrapper;
 import com.yingwei.testing.testpenn2.retrofitutil.intf.IApiService;
 import com.yingwei.testing.testpenn2.trans.DemoCache;
 import com.yingwei.testing.testpenn2.trans.Dot;
-import com.yingwei.testing.testpenn2.trans.PhoneCallStateObserver;
 import com.yingwei.testing.testpenn2.trans.DotCenter;
 import com.yingwei.testing.testpenn2.trans.DotManager;
-import com.yingwei.testing.testpenn2.trans.util.ScreenUtil;
-import com.yingwei.testing.testpenn2.trans.util.log.LogUtil;
-import com.yingwei.testing.testpenn2.util.SPUtils;
+import com.yingwei.testing.testpenn2.trans.PhoneCallStateObserver;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -118,9 +107,6 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-import static android.os.Looper.getMainLooper;
-import static com.netease.nimlib.sdk.msg.constant.MsgTypeEnum.audio;
-
 public class TestConnectActivity extends AppCompatActivity implements IPenMsgListener, DoodleView.FlipListener {
 
     private static final String TAG = "TestConnect";
@@ -134,7 +120,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
      * Renderer:        It draws a Stroke on either Bitmap or Canvas
      */
     private IPenCtrl iPenCtrl;
-//    private SampleView mSampleView;
+    private SampleView mSampleView;
 
 //    private DotManager transactionManager; // 数据发送管理器
 
@@ -181,7 +167,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
 //        penCtrl.connect(mac_address);
 
 //        mSampleView = new SampleView(this);
-//        mSampleView = (SampleView) findViewById(R.id.sample_view_dot);
+        mSampleView = (SampleView) findViewById(R.id.sample_view_dot);
 //        transactionManager = new DotManager(sessionId, account, getApplicationContext());
 
 //        setContentView(mSampleView);
@@ -326,6 +312,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
             // 结束通话
             showToast("对方结束通话");
             Log.e(TAG, "对方结束通话");
+            doodleView.end();
 //            close();
         }
     };
@@ -368,55 +355,55 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         Log.d(TAG, "sectionId = " + sectionId + ", " + "ownerId = " + ownerId + ", " + "noteId = " + noteId + ", " + "pageId = " + pageId +
                 ", " + "x = " + x + ", " + "y = " + y + ", " + "fx = " + fx + ", " + "fy = " + fy +
                 ", " + "pressure = " + pressure + ", " + "timestamp = " + timestamp + ", " + "type = " + type + ", " + "color = " + color);
-//        sendPenDotByBroadcast(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
-//
-//        if (this.pageId == 0){
-//            this.pageId = pageId;
-//        }else{
-//            if (this.pageId != pageId){
-//                //TODO 翻页
-//                flip = true;
-//                this.pageId = pageId;
-//            }else{
-//                flip = false;
-//            }
-//        }
-//        if (flip){
-//            mSampleView.clear();
-//            mSampleView.sendFlipData(noteId, pageId, 64, 1);
-//        }
-//
-//        DotType actionType = DotType.getPenAction(type);
-//        switch (actionType) {
-//            case PEN_ACTION_DOWN:
-//                onPaintActionStart(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
-//                break;
-//            case PEN_ACTION_MOVE:
-//                onPaintActionMove(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
-//                break;
-//            case PEN_ACTION_UP:
-//                onPaintActionEnd(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
-//                break;
-//        }
+        sendPenDotByBroadcast(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
+
+        if (this.pageId == 0){
+            this.pageId = pageId;
+        }else{
+            if (this.pageId != pageId){
+                //TODO 翻页
+                flip = true;
+                this.pageId = pageId;
+            }else{
+                flip = false;
+            }
+        }
+        if (flip){
+            mSampleView.clear();
+            mSampleView.sendFlipData(noteId, pageId, 64, 1);
+        }
+
+        DotType actionType = DotType.getPenAction(type);
+        switch (actionType) {
+            case PEN_ACTION_DOWN:
+                onPaintActionStart(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
+                break;
+            case PEN_ACTION_MOVE:
+                onPaintActionMove(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
+                break;
+            case PEN_ACTION_UP:
+                onPaintActionEnd(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
+                break;
+        }
     }
-//    private void onPaintActionStart(int sectionId, int ownerId, int noteId, int pageId,
-//                                    int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
-//        mSampleView.sendStartTransaction(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
-//        mSampleView.saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.START, x, y, fx, fy, pressure, type, timestamp, color, 0), false, false, flip);
-//    }
-//
-//    private void onPaintActionMove(int sectionId, int ownerId, int noteId, int pageId,
-//                                   int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
-//
-//        mSampleView.sendMoveTransaction(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
-//        mSampleView.saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.MOVE, x, y, fx, fy, pressure, type, timestamp, color, 0), false, false, flip);
-//    }
-//
-//    private void onPaintActionEnd(int sectionId, int ownerId, int noteId, int pageId,
-//                                  int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
-//        mSampleView.sendEndTransaction(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
-//        mSampleView.saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.END, x, y, fx, fy, pressure, type, timestamp, color, 0), false, false, flip);
-//    }
+    private void onPaintActionStart(int sectionId, int ownerId, int noteId, int pageId,
+                                    int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
+        mSampleView.sendStartTransaction(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
+        mSampleView.saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.START, x, y, fx, fy, pressure, type, timestamp, color, 0), false, false, flip);
+    }
+
+    private void onPaintActionMove(int sectionId, int ownerId, int noteId, int pageId,
+                                   int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
+
+        mSampleView.sendMoveTransaction(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
+        mSampleView.saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.MOVE, x, y, fx, fy, pressure, type, timestamp, color, 0), false, false, flip);
+    }
+
+    private void onPaintActionEnd(int sectionId, int ownerId, int noteId, int pageId,
+                                  int x, int y, int fx, int fy, int pressure, long timestamp, int type, int color) {
+        mSampleView.sendEndTransaction(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
+        mSampleView.saveUserData(DemoCache.getAccount(), new Dot(Dot.ActionStep.END, x, y, fx, fy, pressure, type, timestamp, color, 0), false, false, flip);
+    }
 
     @Override
     public void onReceiveMessage(PenMsg penMsg) {
@@ -468,6 +455,9 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
             case R.id.play_record:
 //                playRecord();
 //                downloadFile("http://nim.nos.netease.com/NDI2MTYxNA==/bmltYV8wXzE5MDk4MjIwMjc1NzI0OV8xNDkyMDQ4NjYzNTg4XzlhZWI2ZWM4LWY3OTgtNGY0Ny05YjEyLTE1MGI3YTVhZGE1Nw==?download=0-190982202757249-mix.aac");
+//                Log.e(TAG, "account = " + account +", toAccount = " + toAccount);
+//                DotCenter.getInstance().sendToRemote(sessionId, toAccount, null);
+
                 break;
             case R.id.action_create: //注册
                 register(880);
@@ -476,7 +466,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
                 register(881);
                 break;
             case R.id.connect_account: //联系某一用户（音频）
-                callAccount();
+//                callAccount();
                 break;
             case R.id.connect_band: //联系某一用户（白板）
                 callAccountBin();
@@ -492,7 +482,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
                 downloadFile("");
                 break;
             case R.id.action_replay_file: //播放本地录播文件
-//                replayFile();
+                requestAddress();
                 break;
             case R.id.action_connect: //连接
                 connect();
@@ -594,7 +584,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
 
                 // TODO 进入会话界面
                 toAccount = rtsCalleeAckEvent.getAccount();
-//                mSampleView.initTransactionManager(getApplicationContext(), sessionId, toAccount);
+                mSampleView.initTransactionManager(getApplicationContext(), sessionId, toAccount);
 //                goChatRoom(sessionId, rtsCalleeAckEvent.getAccount(), channelId);
 
                 initDoodleView(sessionId, toAccount);
@@ -623,6 +613,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
             public void onSuccess(Void aVoid) {
                 showToast("结束会话成功");
                 toAccount = null;
+                doodleView.end();
             }
 
             @Override
@@ -691,10 +682,11 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
     //接受白板通道请求(被叫方)
     private void acceptTunData(final String toAccount, final long channelId) {
         Log.e(TAG, "接受白板通道请求(被叫方): sessionId = " +sessionId + ", account = " + account + ", toAccount = " + toAccount + ", channelId = " +channelId);
-//        mSampleView.initTransactionManager(getApplicationContext(), sessionId, toAccount);
+        mSampleView.initTransactionManager(getApplicationContext(), sessionId, toAccount);
 
         initDoodleView(sessionId, toAccount);
 
+        RTSManager.getInstance().observeControlNotification(sessionId, controlObserver, true); //双方会话建立之后，需要监听会话控制通知。
         observeChannelState(true); //发起会话（对方接受后），或者接受了会话请求后，需要立即注册对数据通道状态的监听。
         registerObserverReceiverData(true); //监听收到对方发送的通道数据
 
@@ -706,7 +698,6 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
             public void onSuccess(Boolean aBoolean) {
                 Log.e(TAG, "接受白板通道请求(被叫方): 已接受请求!" + aBoolean.booleanValue());
                 showToast("已接受请求: " + aBoolean.booleanValue());
-
             }
 
             @Override
@@ -947,7 +938,7 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
     };
 
     private void handleDot(int sectionId, int ownerId, int noteId, int pageId, int x, int y, int fx, int fy, int force, long timestamp, int type, int color) {
-//        mSampleView.addDot(sectionId, ownerId, noteId, pageId, x, y, fx, fy, force, timestamp, type, color);
+        mSampleView.addDot(sectionId, ownerId, noteId, pageId, x, y, fx, fy, force, timestamp, type, color);
     }
 
     private void handleMsg(int penMsgType, String content) {
@@ -1128,8 +1119,8 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
     private Observer<RTSTunData> receiveDataObserver = new Observer<RTSTunData>() {
         @Override
         public void onEvent(RTSTunData rtsTunData) {
-//            LogUtil.e(TAG, "receive data");
-            Log.e(TAG, "receive data");
+
+            Log.e(TAG, "receive data from " + rtsTunData.getAccount());
             String data = "[parse bytes error]";
             try {
                 data = new String(rtsTunData.getData(), 0, rtsTunData.getLength(), "UTF-8");
@@ -1305,14 +1296,14 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         }, 50);
     }
 
-    public static Bitmap convertViewToBitmap(View view) {
-        view.destroyDrawingCache();
-        view.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
-                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-        view.layout(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
-        view.setDrawingCacheEnabled(true);
-        return view.getDrawingCache(true);
-    }
+//    public static Bitmap convertViewToBitmap(View view) {
+//        view.destroyDrawingCache();
+//        view.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+//                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+//        view.layout(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
+//        view.setDrawingCacheEnabled(true);
+//        return view.getDrawingCache(true);
+//    }
 
     AVChatStateObserver avChatStateObserver = new AVChatStateObserver() {
         @Override
@@ -1458,13 +1449,13 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
 
         AddressSaveRequest request = new AddressSaveRequest(
                 String.valueOf(channelId),
-                AuthPreferences.getUserAccount(),
                 toAccount,
+                AuthPreferences.getUserAccount(),
 //                "13260398606",
 //                "13260398607",
-                "20",
+                "41",
                 "UNKNOWN");
-        Log.e(TAG, "request = " + request);
+        Log.e(TAG, "saveAddress: request = " + request);
         RetrofitWrapper ins = RetrofitWrapper.getInstance();
         IApiService ser = ins.create(IApiService.class);
         Call<BaseResponse<MsgResponse>> res = ser.addressSave(request);
@@ -1491,8 +1482,8 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
 //            return;
 //        }
 //        channelid = "190982202757249" taskId = "11" studentMobile = "13260398606" teacherMobile = "13260398607"
-        AddressDownLoadRequest request = new AddressDownLoadRequest("13260398607", "13260398606", "20");
-        Log.e(TAG, "request = " + request);
+        AddressDownLoadRequest request = new AddressDownLoadRequest("13260398607", "13260398606", "41");
+        Log.e(TAG, "requestAddress: request = " + request);
         RetrofitWrapper ins = RetrofitWrapper.getInstance();
         IApiService ser = ins.create(IApiService.class);
         Call<BaseResponse<AddressDownLoad>> str = ser.addressDownLoad(request);
@@ -1505,8 +1496,10 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
                         Log.e(TAG, "onResponse: " + response.body().getData());
                         String loadAddress1 = response.body().getData().getAacFileUrl();
                         String loadAddress2 = response.body().getData().getGzFileUrl();
-                        downloadFile(loadAddress1);
+//                        downloadFile(loadAddress1);
                         downloadFile(loadAddress2);
+                        Log.e(TAG, "AacFileUrl = " + loadAddress1);
+                        Log.e(TAG, "GzFileUrl = " + loadAddress2);
                     }else{
                         Log.e(TAG, "Error: " + response.body().getErrorMsg());
                     }
@@ -1550,7 +1543,12 @@ public class TestConnectActivity extends AppCompatActivity implements IPenMsgLis
         }
 //fileName = loadAddress.substring(loadAddress.indexOf("-")+1, loadAddress.lastIndexOf("-")) + ".aac";
 //http://nim.nos.netease.com/NDI2MTYxNA==/bmltYV8zNTMxNDkxMjBfMTkwOTk1MTk2NDk5OTY5XzE0OTIxNTAxNzk1NDFfZTE4NGMzMDAtZjFmZC00OWFlLTk5NDktYTE0Y2U3YzQ2Nzcw?download=353149120-190995196499969.gz
-        loadAddress = "http://nim.nos.netease.com/NDI2MTYxNA==/bmltYV8zNTMxNDkxMjBfMTkwOTk1MTk2NDk5OTY5XzE0OTIxNTAxNzk1NDFfZTE4NGMzMDAtZjFmZC00OWFlLTk5NDktYTE0Y2U3YzQ2Nzcw?download=353149120-190995196499969.gz";
+//        loadAddress = "http://nim.nos.netease.com/NDI2MTYxNA==/bmltYV8zNTMxNDkxMjBfMTkwOTk1MTk2NDk5OTY5XzE0OTIxNTAxNzk1NDFfZTE4NGMzMDAtZjFmZC00OWFlLTk5NDktYTE0Y2U3YzQ2Nzcw?download=353149120-190995196499969.gz";
+//        loadAddress = "http://nim.nos.netease.com/NDI2MTYxNA==/bmltYV8zNTMxMTUzODhfMTkxMDk0MjI1NjMxNzQ1XzE0OTI5MjM3ODk5MDRfYzZiYmZiZDctOWEzOC00MWUyLTk3MmQtNzIyOTgyY2QwOTQy?download=353115388-191094225631745.gz";
+//        loadAddress = "http://nim.nos.netease.com/NDI2MTYxNA==/bmltYV8zNTMxMTUzODhfMTkxMTAzOTE5MTg3NzEzXzE0OTI5OTk3MTI4NDdfNGU1NTk1M2MtYzVlMC00ZDg2LWJjZDItZGJmMTk0NzlkNDlk?download=353115388-191103919187713.gz";
+        if (loadAddress.length() == 0) {
+            loadAddress = "http://nim.nos.netease.com/NDI2MTYxNA==/bmltYV8zNTMxMTUzODhfMTkxMTA0MTIzODUwMzY5XzE0OTMwMDEyODIwOTZfYjg1YTNlNmQtMjNiOC00MGQ2LTlkYzUtZGI1NmExMWYzMThi?download=353115388-191104123850369.gz";
+        }
         fileName = loadAddress.substring(loadAddress.lastIndexOf("=")+1);
         Log.e(TAG, "loadAddress = " + loadAddress);
         Log.e(TAG, "fileName = " + fileName);

@@ -6,7 +6,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Rect;
-import android.graphics.Typeface;
 import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -23,7 +22,6 @@ import com.yingwei.testing.testpenn2.trans.DotCenter;
 import com.yingwei.testing.testpenn2.trans.DotManager;
 import com.yingwei.testing.testpenn2.trans.DotObserver;
 import com.yingwei.testing.testpenn2.trans.util.log.LogUtil;
-
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -174,7 +172,8 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, D
     }
 
     private void clearSyncData() {
-        TransactionCenter.getInstance().getSyncCache().remove(sessionId);
+//        TransactionCenter.getInstance().getSyncCache().remove(sessionId);
+        DotCenter.getInstance().getSyncCache().remove(sessionId);
         // 同步数据绘制完毕，需要将自己画笔颜色修改为初始化颜色。
         paintChannel.paintColor = this.paintColor;
     }
@@ -190,13 +189,14 @@ public class DoodleView extends SurfaceView implements SurfaceHolder.Callback, D
             dotManager.end();
         }
 
-        Map<String, Map<String, List<Transaction>>> syncCacheMap
-                = TransactionCenter.getInstance().getSyncCache();
+//        Map<String, Map<String, List<Transaction>>> syncCacheMap = TransactionCenter.getInstance().getSyncCache();
+        Map<String, Map<String, List<Dot>>> syncCacheMap = DotCenter.getInstance().getSyncCache();
         if (syncCacheMap != null) {
             syncCacheMap.remove(sessionId);
         }
 
-        TransactionCenter.getInstance().setDoodleViewInited(false);
+//        TransactionCenter.getInstance().setDoodleViewInited(false);
+        DotCenter.getInstance().setDoodleViewInited(false);
     }
 
     /**

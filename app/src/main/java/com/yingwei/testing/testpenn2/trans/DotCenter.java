@@ -1,16 +1,22 @@
 package com.yingwei.testing.testpenn2.trans;
 
+import android.nfc.Tag;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.netease.nimlib.sdk.rts.RTSManager;
 import com.netease.nimlib.sdk.rts.model.RTSTunData;
+import com.yingwei.testing.testpenn2.view.ReplayActivity;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPOutputStream;
 
 
 /**
@@ -50,13 +56,94 @@ public class DotCenter {
             return;
         }
         String data = pack(transactions);
+//        String string1 = "1:12.37,12.24,34,17,1492150044850,-16777216;2:12.38,12.22,97,18,1492150044858,-16777216;2:12.37,12.22,128,18,1492150044866,-16777216;2:12.38,12.24,138,18,1492150044875,-16777216;2:12.38,12.28,159,18,1492150044883,-16777216;2:12.38,12.35,169,18,1492150044891,-16777216;2:12.37,12.45,177,18,1492150044900,-16777216;2:12.36,12.54,182,18,1492150044908,-16777216;2:12.33,12.61,185,18,1492150044916,-16777216;5:1,0;";
+//        String string11 = "1:22.37,22.24,34,17,1492150045850,-16777216;2:22.38,22.22,97,18,1492150045858,-16777216;2:22.37,22.22,128,18,1492150045866,-16777216;2:22.38,22.24,138,18,1492150045875,-16777216;2:22.38,22.28,159,18,1492150045883,-16777216;2:22.38,22.35,169,18,1492150045891,-16777216;2:22.37,22.45,177,18,1492150045900,-16777216;2:22.36,22.54,182,18,1492150045908,-16777216;2:22.33,22.61,185,18,1492150045916,-16777216;5:1,0;";
+//        String string2 = "2:12.30,12.70,187,18,1492150044925,-16777216;2:12.24,12.83,189,18,1492150044933,-16777216;2:12.13,13.04,189,18,1492150044941,-16777216;2:12.00,13.33,189,18,1492150044950,-16777216;2:11.85,13.62,189,18,1492150044958,-16777216;2:11.74,13.84,181,18,1492150044966,-16777216;2:11.65,14.03,171,18,1492150044975,-16777216;2:11.60,14.13,121,18,1492150044983,-16777216;2:11.59,14.19,68,18,1492150044991,-16777216;2:11.59,14.16,48,18,1492150045000,-16777216;2:11.59,14.04,10,18,1492150045008,-16777216;3:11.59,14.04,10,20,1492150045009,-16777216;1:12.50,13.13,135,17,1492150045083,-16777216;2:12.49,13.21,168,18,1492150045091,-16777216;2:12.43,13.39,175,18,1492150045100,-16777216;2:12.39,13.59,185,18,1492150045108,-16777216;2:12.36,13.81,188,18,1492150045116,-16777216;2:12.31,14.03,191,18,1492150045125,-16777216;2:12.28,14.29,191,18,1492150045133,-16777216;2:12.25,14.55,192,18,1492150045141,-16777216;5:1,0;";
+//        String string21 = "2:22.30,22.70,187,18,1492150045925,-16777216;2:22.24,22.83,189,18,1492150045933,-16777216;2:22.13,23.04,189,18,1492150045941,-16777216;2:22.00,23.33,189,18,1492150045950,-16777216;2:21.85,23.62,189,18,1492150045958,-16777216;2:21.74,23.84,181,18,1492150045966,-16777216;2:21.65,24.03,171,18,1492150045975,-16777216;2:21.60,24.13,121,18,1492150045983,-16777216;2:21.59,24.19,68,18,1492150045991,-16777216;2:21.59,24.16,48,18,1492150046000,-16777216;2:21.59,24.04,10,18,1492150046008,-16777216;3:21.59,24.04,10,20,1492150046009,-16777216;1:22.50,23.13,135,17,1492150046083,-16777216;2:22.49,23.21,168,18,1492150046091,-16777216;2:22.43,23.39,175,18,1492150046100,-16777216;2:22.39,23.59,185,18,1492150046108,-16777216;2:22.36,23.81,188,18,1492150046116,-16777216;2:22.31,24.03,191,18,1492150046125,-16777216;2:22.28,24.29,191,18,1492150046133,-16777216;2:22.25,24.55,192,18,1492150046141,-16777216;5:1,0;";
+//        ArrayList<String> dataList = new ArrayList<>();
+//        dataList.add(string1);
+//        dataList.add(string11);
+//        dataList.add(string2);
+//        dataList.add(string21);
+//        for (String data : dataList) {
+
         try {
-            RTSTunData channelData = new RTSTunData(sessionId, toAccount, data.getBytes("UTF-8"), data.getBytes().length);
+            byte byteData[] = data.getBytes("UTF-8");
+            saveOutFile(sessionId, byteData, byteData.length);
+            RTSTunData channelData = new RTSTunData(sessionId, toAccount, byteData, byteData.length);
             boolean isSend = RTSManager.getInstance().sendData(channelData);
-            Log.i(TAG, "SEND DATA = " + index + ", BYTES = " + data.getBytes().length + ", isSend=" + isSend);
+            Log.e(TAG, "SEND DATA = " + index + ", BYTES = " + data.getBytes().length + ", isSend=" + isSend);
         } catch (UnsupportedEncodingException e) {
             Log.e("Transaction", "send to remote, getBytes exception : " + data);
         }
+    }
+
+    private void saveOutFile(String sessionId, byte[] byteData, int length) {
+        GZIPOutputStream gos = null;
+        try {
+            File folder = new File(ReplayActivity.savePath);
+            if (!folder.exists()){
+                folder.mkdirs();
+            }
+
+            File f = new File(folder, sessionId + ".gz");
+            if (!f.exists()) {
+                boolean create = f.createNewFile();
+                Log.e(TAG, "create = " + create);
+            }
+            boolean read = f.setReadable(true);
+            boolean write = f.setWritable(true);
+            Log.e(TAG, "read: " + read + ", write: " + write);
+            Log.e(TAG, "read: " + f.canRead() + ", write: " + f.canWrite());
+
+            gos = new GZIPOutputStream(new FileOutputStream(f, true));
+
+            byte[] lengthB = intToByteArray(length + 8);
+            gos.write(lengthB, 0, 4);
+
+            byte[] timeB = longToByteArray(System.currentTimeMillis());
+            gos.write(timeB, 0, 4);
+
+            gos.write(byteData);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (gos != null) {
+                try {
+                    gos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private byte[] longToByteArray(long data) {
+        byte[] bytes = new byte[8];
+        bytes[0] = (byte) (data & 0xff);
+        bytes[1] = (byte) ((data >> 8) & 0xff);
+        bytes[2] = (byte) ((data >> 16) & 0xff);
+        bytes[3] = (byte) ((data >> 24) & 0xff);
+        bytes[4] = (byte) ((data >> 32) & 0xff);
+        bytes[5] = (byte) ((data >> 40) & 0xff);
+        bytes[6] = (byte) ((data >> 48) & 0xff);
+        bytes[7] = (byte) ((data >> 56) & 0xff);
+        return bytes;
+    }
+
+    private byte[] intToByteArray(int data) {
+        byte[] result = new byte[4];
+//        result[0] = (byte) ((i >> 24) & 0xFF);
+//        result[1] = (byte) ((i >> 16) & 0xFF);
+//        result[2] = (byte) ((i >> 8) & 0xFF);
+//        result[3] = (byte) (i & 0xFF);
+
+        result[0] = (byte) (data & 0xff);
+        result[1] = (byte) ((data & 0xff00) >> 8);
+        result[2] = (byte) ((data & 0xff0000) >> 16);
+        result[3] = (byte) ((data & 0xff000000) >> 24);
+        return result;
     }
 
     /**

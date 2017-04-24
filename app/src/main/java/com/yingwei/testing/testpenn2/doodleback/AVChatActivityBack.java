@@ -1,4 +1,4 @@
-package com.yingwei.testing.testpenn2.view;
+package com.yingwei.testing.testpenn2.doodleback;
 
 import android.app.Activity;
 import android.app.NotificationManager;
@@ -8,9 +8,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
+import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -26,14 +26,14 @@ import com.yingwei.testing.testpenn2.DeviceListActivity;
 import com.yingwei.testing.testpenn2.R;
 import com.yingwei.testing.testpenn2.SampleView;
 import com.yingwei.testing.testpenn2.Util;
-import com.yingwei.testing.testpenn2.trans.DemoCache;
-import com.yingwei.testing.testpenn2.trans.Dot;
 import com.yingwei.testing.testpenn2.trans.DotCenter;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+
 import kr.neolab.sdk.ink.structure.DotType;
 import kr.neolab.sdk.ink.structure.Stroke;
 import kr.neolab.sdk.pen.IPenCtrl;
@@ -43,7 +43,7 @@ import kr.neolab.sdk.pen.penmsg.IPenMsgListener;
 import kr.neolab.sdk.pen.penmsg.PenMsg;
 import kr.neolab.sdk.pen.penmsg.PenMsgType;
 
-public class AVChatActivity extends AppCompatActivity implements IPenMsgListener {
+public class AVChatActivityBack extends AppCompatActivity implements IPenMsgListener {
 
     private static final String TAG = "AVChatActivity";
 
@@ -173,12 +173,15 @@ public class AVChatActivity extends AppCompatActivity implements IPenMsgListener
         DotType actionType = DotType.getPenAction(type);
         switch (actionType) {
             case PEN_ACTION_DOWN:
+                Log.e(TAG, "<<<<<<<PEN_ACTION_DOWN");
                 onPaintActionStart(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
                 break;
             case PEN_ACTION_MOVE:
+                Log.e(TAG, "-----PEN_ACTION_MOVE-----");
                 onPaintActionMove(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
                 break;
             case PEN_ACTION_UP:
+                Log.e(TAG, "PEN_ACTION_UP>>>>>>>");
                 onPaintActionEnd(sectionId, ownerId, noteId, pageId, x, y, fx, fy, pressure, timestamp, type, color);
                 break;
         }
@@ -574,7 +577,7 @@ public class AVChatActivity extends AppCompatActivity implements IPenMsgListener
     }
 
     public static void startActivity(Context context, Intent intent){
-        Intent intents = new Intent(context, AVChatActivity.class);
+        Intent intents = new Intent(context, AVChatActivityBack.class);
 //        if (intent.getSerializableExtra("data") != null){
 //            intents.putExtra("data", intent.getSerializableExtra("data"));
 //        }else {
